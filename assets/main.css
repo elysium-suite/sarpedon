@@ -1,0 +1,57 @@
+/* sarpedon custom styles
+–––––––––––––––––––––––––––––––––––––––––– */
+
+.filterbuttons {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+}
+
+.scoreboard td {
+    margin: 0;
+    padding: 0;
+}
+
+.table td a {
+    display: block;
+    padding: 16px;
+    text-decoration: none;
+}
+
+.btn-group a {
+    display: block;
+    text-decoration: none;
+}
+
+body {
+    background-color: #212529;
+}
+
+h1 {
+    color: white;
+}
+
+h2, h4, h6 {
+    color: white;
+    font-weight: bold;
+    text-align: center;
+}
+
+a, a:hover {
+    color: white;
+}
+
+nav {
+    background-color: #212529 !important;
+    color: black;
+}
+
+table.table {
+    width:75%;
+    margin: auto;
+    text-align: center;
+}
+
+td {
+    cursor: pointer;
+}

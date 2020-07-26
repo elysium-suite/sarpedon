@@ -1,0 +1,162 @@
+{{ template "head.html" . }}
+{{ template "nav.html" }}
+
+<h2>Leaderboard</h2><br>
+<h4><i>{{ .team.Team.Alias }}</i></h4>
+<br>
+{{ if .imageFilter }}
+<h4>
+    <button class="btn btn-lg btn-dark">
+        <a href="/team/{{ .team.Team.Alias }}">
+            Only showing data for {{ .imageFilter }}.
+        </a>
+    </button>
+</h4>
+<br>
+{{ end }}
+
+<!-- Team info -->
+<table class="table table-borderless table-dark table-striped">
+    <thead class="thead-dark">
+        <th>Play Time</th>
+        <th>Total Score</th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>{{ .team.Time }}</td>
+            <td>{{ .team.Score }}</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- Current image scores -->
+<br><h4>Current Image Scores</h4><br>
+<table class="table table-borderless table-dark table-striped">
+    <thead class="thead-dark">
+        <th>Image Name</th>
+        <th>Play Time</th>
+        <th>Elapsed Time</th>
+        <th>Vulns Found</th>
+        <th>Total Vulns</th>
+        <th>Score</th>
+    </thead>
+    <tbody>
+        {{ range $score := .data }}
+        <tr>
+            <td>{{ $score.Image }}</td>
+            <td>{{ $score.PlayTimeStr }}</td>
+            <td>{{ $score.ElapsedTimeStr }}</td>
+            <td>{{ $score.Vulns.VulnsScored}}</td>
+            <td>{{ $score.Vulns.VulnsTotal}}</td>
+            <td>{{ $score.Points }}</td>
+        </tr>
+        {{ end }}
+    </tbody>
+</table>
+
+
+{{ $records := .records }}
+{{ $config := .config }}
+
+<!-- Graph of scores over time -->
+<br><br><h4>Scores Over Time</h4><br>
+<noscript>
+    <p style="color: white; text-align: center">The score graph uses Chart.js, and thus doesn't function without JavaScript.</p>
+</noscript>
+<canvas id="scoresOverTime"></canvas>
+
+<script>
+    var config = {
+        type: 'line',
+        data: {
+            labels: [{{ range $index, $record := $records }}{{ if $index }} , {{ end }} '{{ $record.Time.Format "2006-01-02 15:04:05" }}'{{ end }}],
+            datasets: [
+            {{ range $index, $image := $config.Image }}
+            {{ if $index }}
+                ,
+            {{ end }}
+            {
+                label: '{{ $image.Name }}',
+                {{ if $image.Color }}
+                backgroundColor: '{{ $image.Color }}',
+                borderColor: '{{ $image.Color }}',
+                {{ else }}
+                backgroundColor: 'rgb(255, 255, 255)',
+                borderColor: 'rgb(255, 255, 255)',
+                {{ end }}
+
+                data: [
+                {{ range $index2, $record := $records }}
+                    {{ if eq $record.Image $image.Name }}
+                    {{ if $index2 }}
+                        ,
+                    {{end}}
+                    {x: '{{ $record.Time.Format "2006-01-02 15:04:05" }}', y: {{ $record.Points }} }
+                    {{ end }}
+                {{ end }}
+                ],
+                fill: false,
+            }
+            {{ end }}
+            ]
+        },
+        options: {
+            responsive: true,
+            elements : {
+                line: {
+                    tension: 0
+                }
+            },
+            scales: {
+                xAxes: [{
+                    scaleLabel: {
+                        labelString: 'Time'
+                    }
+                }],
+                yAxes: [{
+                    scaleLabel: {
+                        labelString: 'Score'
+                    },
+                    ticks: {
+                        beginAtZero: true,
+                        maxTicksLimit: 5,
+                        stepSize: 1
+                    }
+                }]
+            }
+        }
+    };
+
+    window.onload = function() {
+        var ctx = document.getElementById('scoresOverTime').getContext('2d');
+        window.myLine = new Chart(ctx, config);
+    };
+
+</script>
+
+{{ if .user }}
+<br><br><h4>Vulnerabilities</h4><br>
+{{ range $score := .data }}
+<h6>{{ $score.Image }}</h6>
+<br>
+<table class="table table-borderless table-dark table-striped">
+    <thead class="thead-dark">
+        <th>Vuln Text</th>
+        <th>Points</th>
+    </thead>
+    <tbody>
+        {{ range $vuln := $score.Vulns.VulnItems }}
+        <tr>
+            <td>{{ $vuln.VulnText }}</td>
+            <td>{{ $vuln.VulnPoints }}</td>
+        </tr>
+        {{ end }}
+    </tbody>
+</table>
+{{ end }}
+{{ end }}
+
+<br>
+<br>
+<script src="/assets/charts.js"></script>
+{{ template "feet.html" }}

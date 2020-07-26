@@ -1,0 +1,92 @@
+{{ template "head.html" . }}
+{{ template "nav.html" . }}
+{{ $imageFilter := .imageFilter }}
+
+<div class="container">
+    <h2>Leaderboard</h2>
+    {{ if .user }}
+    <h6>
+        <a href="/export">
+            <i>Export CSV</i>
+        </a>
+    </h6>
+    {{ end }}
+    <br>
+    {{ if .event }}
+    <h4><i>{{ .event }}</i></h4>
+    {{ end }}
+    <div class="filterbuttons">
+        {{ if $imageFilter }}
+        <p style="color: white; margin-right: 1rem;">
+            Only showing <b>{{ $imageFilter }}!</b>
+        </p>
+        {{ else }}
+        <p style="color: white; margin-right: 1rem;">
+            Filter by image:
+        </p>
+        {{ end }}
+        <div class="btn-group btn-group-sm" role="group">
+            {{ range $image := .config.Image }}
+            <button type="button" class="btn btn-dark">
+                <a href="/image/{{ $image.Name }}">
+                    {{ $image.Name }}
+                </a>
+            </button>
+            &nbsp;
+            {{ end }}
+            {{ if $imageFilter }}
+            <button type="button" class="btn btn-dark">
+                <a href="/">
+                    All
+                </a>
+            </button>
+            {{ end }}
+        </div>
+    </div>
+    <br>
+    <table class="table table-borderless table-dark table-hover scoreboard">
+            <thead class="thead-dark">
+                <th>Team</th>
+                <th>Image(s)</th>
+                <th>Play Time</th>
+                <th>Score</th>
+            </thead>
+            <tbody>
+                {{ range $team := .scores }}
+                {{ $linktext := "" }}
+                {{ if $imageFilter }}
+                    {{ $linktext = (print "/team/" $team.Team.Alias "/image/" $imageFilter) }}
+                {{ else }}
+                    {{ $linktext = (print "/team/" $team.Team.Alias) }}
+                {{ end }}
+                <tr>
+                    <td>
+                        <a href="{{ $linktext }}">
+                            {{ $team.Team.Alias }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ $linktext }}">
+                            {{ $team.ImageCount }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ $linktext }}">
+                            {{ $team.Time }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ $linktext }}">
+                            {{ $team.Score }}
+                        </a>
+                    </td>
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+
+        <br/><br/>
+
+    </div>
+
+    {{ template "feet.html" }}

@@ -1,0 +1,18 @@
+{{ template "head.html" }}
+{{ template "nav.html" }}
+<div class="col-sm-4 offset-sm-4">
+    <br>
+    <h1>Login</h1>
+    {{ template "error.html" .error }}
+    <form method="POST" action="/login">
+        <div class="form-group">
+            <input class="form-control" type="text" name="username" placeholder="Username"></input>
+        </div>
+        <div class="form-group">
+            <input class="form-control" type="password" name="password" placeholder="Password"></input>
+        </div>
+        <input type="submit" class="btn btn-success" value="Login"/>
+    </form>
+</div>
+
+{{ template "feet.html" }}
