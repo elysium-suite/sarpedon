@@ -6,111 +6,11 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"io"
-	"strconv"
-	"strings"
 )
 
-func validateUpdate(plainUpdate string) (map[string]string, error) {
-	updateMap := make(map[string]string)
-	splitUpdate := strings.Split(plainUpdate, "|-SP-|")
-	if len(splitUpdate) != 13 {
-		return updateMap, errors.New("Error splitting input.")
-	}
-	for i := 0; i < len(splitUpdate)-2; i += 2 {
-		fmt.Println("MAPPING", splitUpdate[i], "to", splitUpdate[i+1])
-		updateMap[splitUpdate[i]] = splitUpdate[i+1]
-	}
-
-	fields := []string{"team", "image", "score", "challenge", "vulns", "time"}
-	for _, f := range fields {
-		if !validateString(updateMap[f]) {
-			return updateMap, errors.New("Field " + f + " contained invalid characters")
-		}
-	}
-
-	if !validateTeam(updateMap["team"]) {
-		return updateMap, errors.New("Invalid team: " + updateMap["team"])
-	}
-
-	if !validateImage(updateMap["image"]) {
-		return updateMap, errors.New("Invalid image: " + updateMap["image"])
-	}
-
-	return updateMap, nil
-}
-
-func validateTeam(teamName string) bool {
-	for _, team := range sarpConfig.Team {
-		if team.Id == teamName {
-			return true
-		}
-		if team.Alias == teamName {
-			return true
-		}
-	}
-	return false
-}
-
-func validateImage(imageName string) bool {
-	for _, image := range sarpConfig.Image {
-		if image.Name == imageName {
-			return true
-		}
-	}
-	return false
-}
-
-func parseVulns(vulnText string) vulnWrapper {
-	wrapper := vulnWrapper{}
-	vulnText, err := hexDecode(vulnText)
-	if err != nil {
-		return wrapper
-		fmt.Println("Error decoding hex input.")
-	}
-	plainVulns, err := decryptString(sarpConfig.Password, vulnText)
-	if err != nil {
-		fmt.Println(err)
-		return wrapper
-	}
-	splitVulns := strings.Split(plainVulns, "|-SP-|")
-	scored, err := strconv.Atoi(splitVulns[0])
-	wrapper.VulnsScored = scored
-	if err != nil {
-		panic(err)
-	}
- 	total, err := strconv.Atoi(splitVulns[1])
-	wrapper.VulnsTotal = total
-	if err != nil {
-		panic(err)
-	}
-	splitVulns = splitVulns[2:len(splitVulns)-2]
-	fmt.Println("splitvulns", splitVulns)
-	for _, vuln := range splitVulns {
-		splitVuln := strings.Split(vuln, "-")
-		fmt.Println("splitVuln", splitVuln)
-		fmt.Println("len", len(splitVuln))
-		fmt.Println("some reasson, keep going...")
-		if len(splitVuln) != 2 {
-			panic(errors.New("Invalid vuln input"))
-		}
-		vulnText := strings.TrimSpace(splitVuln[0])
-		splitVuln = strings.Split(strings.TrimSpace(splitVuln[1]), " ")
-		if len(splitVuln) != 2 {
-			panic(errors.New("Invalid vuln input"))
-		}
-		vulnPoints, err := strconv.Atoi(splitVuln[0])
-		if err != nil {
-			panic(errors.New("Invalid vuln input"))
-		}
-		fmt.Println("appending", vulnText, vulnPoints)
-		wrapper.VulnItems = append(wrapper.VulnItems, vulnItem{VulnText: vulnText, VulnPoints: vulnPoints})
-	}
-	fmt.Println("wrapper", wrapper)
-	return wrapper
-}
+var delimiter = "|-S#-|"
 
 // encryptString takes a password and a plaintext and returns an encrypted byte
 // sequence (as a string). It uses AES-GCM with a 12-byte IV (as is

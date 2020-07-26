@@ -20,6 +20,7 @@ type AdminData struct {
 
 type ImageData struct {
 	Name, Color string
+	Records []scoreEntry
 }
 
 type TeamData struct {
@@ -90,13 +91,4 @@ func checkConfig() {
 			}
 		}
 	}
-}
-
-func getTeam(teamProp string) TeamData {
-	for _, team := range sarpConfig.Team {
-		if team.Id == teamProp || team.Email == teamProp || team.Alias == teamProp {
-			return team
-		}
-	}
-	return TeamData{}
 }

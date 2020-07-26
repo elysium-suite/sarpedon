@@ -1,6 +1,8 @@
 {{ template "head.html" . }}
 {{ template "nav.html" }}
 
+<script src="/assets/charts.js"></script>
+
 <h2>Leaderboard</h2><br>
 <h4><i>{{ .team.Team.Alias }}</i></h4>
 <br>
@@ -29,9 +31,11 @@
     </tbody>
 </table>
 
+{{ $team := .team.Team }}
+
 <!-- Current image scores -->
 <br><h4>Current Image Scores</h4><br>
-<table class="table table-borderless table-dark table-striped">
+<table class="table table-borderless table-dark table-striped scoreboard">
     <thead class="thead-dark">
         <th>Image Name</th>
         <th>Play Time</th>
@@ -43,20 +47,43 @@
     <tbody>
         {{ range $score := .data }}
         <tr>
-            <td>{{ $score.Image }}</td>
-            <td>{{ $score.PlayTimeStr }}</td>
-            <td>{{ $score.ElapsedTimeStr }}</td>
-            <td>{{ $score.Vulns.VulnsScored}}</td>
-            <td>{{ $score.Vulns.VulnsTotal}}</td>
-            <td>{{ $score.Points }}</td>
+            <td>
+                <a href="/image/{{ $score.Image }}">
+                {{ $score.Image }}
+                </a>
+            </td>
+            <td>
+                <a href="/team/{{ $team.Alias }}/image/{{ $score.Image }}">
+                {{ $score.PlayTimeStr }}
+                </a>
+            </td>
+            <td>
+                <a href="/team/{{ $team.Alias }}/image/{{ $score.Image }}">
+                {{ $score.ElapsedTimeStr }}
+                </a>
+            </td>
+            <td>
+                <a href="/team/{{ $team.Alias }}/image/{{ $score.Image }}">
+                {{ $score.Vulns.VulnsScored}}
+                </a>
+            </td>
+            <td>
+                <a href="/team/{{ $team.Alias }}/image/{{ $score.Image }}">
+                {{ $score.Vulns.VulnsTotal}}
+                </a>
+            </td>
+            <td>
+                <a href="/team/{{ $team.Alias }}/image/{{ $score.Image }}">
+                {{ $score.Points }}
+                </a>
+            </td>
         </tr>
         {{ end }}
     </tbody>
 </table>
 
-
-{{ $records := .records }}
-{{ $config := .config }}
+{{ $labels := .labels }}
+{{ $images := .images }}
 
 <!-- Graph of scores over time -->
 <br><br><h4>Scores Over Time</h4><br>
@@ -69,12 +96,10 @@
     var config = {
         type: 'line',
         data: {
-            labels: [{{ range $index, $record := $records }}{{ if $index }} , {{ end }} '{{ $record.Time.Format "2006-01-02 15:04:05" }}'{{ end }}],
+            labels: [{{ range $index, $label := $labels }}{{ if $index }} , {{ end }} '{{ $label }}' {{ end }}],
             datasets: [
-            {{ range $index, $image := $config.Image }}
-            {{ if $index }}
-                ,
-            {{ end }}
+            {{ range $index, $image := $images }}
+            {{ if $index }},{{ end }}
             {
                 label: '{{ $image.Name }}',
                 {{ if $image.Color }}
@@ -84,17 +109,11 @@
                 backgroundColor: 'rgb(255, 255, 255)',
                 borderColor: 'rgb(255, 255, 255)',
                 {{ end }}
-
                 data: [
-                {{ range $index2, $record := $records }}
-                    {{ if eq $record.Image $image.Name }}
-                    {{ if $index2 }}
-                        ,
-                    {{end}}
-                    {x: '{{ $record.Time.Format "2006-01-02 15:04:05" }}', y: {{ $record.Points }} }
-                    {{ end }}
-                {{ end }}
-                ],
+                {{ range $index2, $record := $image.Records }}
+                {{ if $index2 }},{{end}}
+                    {x: '{{ $record.Time.Format "2006-01-02 15:04" }}', y: {{ $record.Points }} }
+                {{ end }} ],
                 fill: false,
             }
             {{ end }}
@@ -108,15 +127,7 @@
                 }
             },
             scales: {
-                xAxes: [{
-                    scaleLabel: {
-                        labelString: 'Time'
-                    }
-                }],
                 yAxes: [{
-                    scaleLabel: {
-                        labelString: 'Score'
-                    },
                     ticks: {
                         beginAtZero: true,
                         maxTicksLimit: 5,
@@ -158,5 +169,4 @@
 
 <br>
 <br>
-<script src="/assets/charts.js"></script>
 {{ template "feet.html" }}
