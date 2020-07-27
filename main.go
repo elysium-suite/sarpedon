@@ -97,6 +97,13 @@ func viewTeam(c *gin.Context) {
 		errorOutGraceful(c, errors.New("Team doesn't have any image data"))
 		return
 	}
+	for index, score := range teamScore {
+		for _, vuln := range score.Vulns.VulnItems {
+			if vuln.VulnPoints < 0 {
+				teamScore[index].Penalties++
+			}
+		}
+	}
 	teamData, err := parseScoresIntoTeam(teamScore)
 	if err != nil {
 		errorOutGraceful(c, errors.New("Parsing team scores failed"))

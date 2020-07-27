@@ -37,12 +37,13 @@
 <br><h4>Current Image Scores</h4><br>
 <table class="table table-borderless table-dark table-striped scoreboard">
     <thead class="thead-dark">
-        <th>Image Name</th>
+        <th>Image</th>
         <th>Play Time</th>
         <th>Elapsed Time</th>
-        <th>Vulns Found</th>
-        <th>Total Vulns</th>
-        <th>Score</th>
+        <th>Found</th>
+        <th>Total</th>
+        <th>Penalties</th>
+        <th>Points</th>
     </thead>
     <tbody>
         {{ range $score := .data }}
@@ -70,6 +71,11 @@
             <td>
                 <a href="/team/{{ $team.Alias }}/image/{{ $score.Image.Name }}">
                 {{ $score.Vulns.VulnsTotal}}
+                </a>
+            </td>
+            <td>
+                <a href="/team/{{ $team.Alias }}/image/{{ $score.Image.Name }}">
+                {{ $score.Penalties }}
                 </a>
             </td>
             <td>
@@ -129,8 +135,8 @@
             scales: {
                 xAxes: [{
                     ticks: {
-                        maxRotation: 0,
-                        minRoation: 0
+                        maxRotation: 90,
+                        minRoation: 90
                     }
                 }],
                 yAxes: [{
@@ -154,7 +160,7 @@
 {{ if .user }}
 <br><br><h4>Vulnerabilities</h4><br>
 {{ range $score := .data }}
-<h6>{{ $score.Image }}</h6>
+<h6>{{ $score.Image.Name }}</h6>
 <br>
 <table class="table table-borderless table-dark table-striped">
     <thead class="thead-dark">
@@ -170,9 +176,9 @@
         {{ end }}
     </tbody>
 </table>
+<br>
+<br>
 {{ end }}
 {{ end }}
 
-<br>
-<br>
 {{ template "feet.html" }}

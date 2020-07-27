@@ -83,15 +83,30 @@ func parseVulns(vulnText string, imagePoints int) (vulnWrapper, error) {
 	splitVulns = splitVulns[2 : len(splitVulns)-1]
 	for _, vuln := range splitVulns {
 		splitVuln := strings.Split(vuln, "-")
-		if len(splitVuln) != 2 {
-			return wrapper, errors.New("Error splitting vuln on delimiter")
+		fmt.Println("splitvulns", splitVuln, "len", len(splitVuln))
+		if len(splitVuln) < 2 {
+			return wrapper, errors.New(fmt.Sprintln("Error splitting vuln on delimiter:", splitVuln, "length of", len(splitVuln)))
 		}
-		vulnText := strings.TrimSpace(splitVuln[0])
-		splitVuln = strings.Split(strings.TrimSpace(splitVuln[1]), " ")
+
+		splitText := splitVuln[:len(splitVuln)-1]
+		vulnText := ""
+		for index, subString := range splitText {
+			if index != 0 {
+				vulnText += "-"
+			}
+			vulnText += subString
+		}
+		fmt.Println("BRUH vulnText", vulnText)
+
+		splitVuln = strings.Split(strings.TrimSpace(splitVuln[len(splitVuln)-1]), " ")
 		if len(splitVuln) != 2 {
 			return wrapper, errors.New("Error splitting vuln on space")
 		}
-		vulnPoints, err := strconv.Atoi(splitVuln[0])
+		vulnPointsText := strings.TrimSpace(splitVuln[0])
+		if string(vulnPointsText[0]) == "N" {
+			vulnPointsText = "-" + string(vulnPointsText[1:])
+		}
+		vulnPoints, err := strconv.Atoi(vulnPointsText)
 		if err != nil {
 			return wrapper, errors.New("Error parsing vuln point value")
 		}

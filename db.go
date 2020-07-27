@@ -29,6 +29,7 @@ type scoreEntry struct {
 	Image          ImageData     `json:"image,omitempty"`
 	Vulns          vulnWrapper   `json:"vulns,omitempty"`
 	Points         int           `json:"points,omitempty"`
+	Penalties      int           `json:"penalties,omitempty"`
 	PlayTime       time.Duration `json:"playtime,omitempty"`
 	PlayTimeStr    string        `json:"playtimestr,omitempty"`
 	ElapsedTime    time.Duration `json:"elapsedtime,omitempty"`
