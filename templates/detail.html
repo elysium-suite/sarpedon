@@ -4,13 +4,13 @@
 <script src="/assets/charts.js"></script>
 
 <h2>Leaderboard</h2><br>
-<h4><i>{{ .team.Team.Alias }}</i></h4>
+<h4>Team: <i>{{ .team.Team.Alias }}</i></h4>
 <br>
 {{ if .imageFilter }}
 <h4>
     <button class="btn btn-lg btn-dark">
         <a href="/team/{{ .team.Team.Alias }}">
-            Only showing data for {{ .imageFilter }}.
+            Only showing data for <span style="color: {{ .imageFilter.Color }}">{{ .imageFilter.Name }}.</span>
         </a>
     </button>
 </h4>
@@ -48,32 +48,32 @@
         {{ range $score := .data }}
         <tr>
             <td>
-                <a href="/image/{{ $score.Image }}">
-                {{ $score.Image }}
+                <a href="/image/{{ $score.Image.Name }}" style="color: {{ $score.Image.Color }}">
+                {{ $score.Image.Name }}
                 </a>
             </td>
             <td>
-                <a href="/team/{{ $team.Alias }}/image/{{ $score.Image }}">
+                <a href="/team/{{ $team.Alias }}/image/{{ $score.Image.Name }}">
                 {{ $score.PlayTimeStr }}
                 </a>
             </td>
             <td>
-                <a href="/team/{{ $team.Alias }}/image/{{ $score.Image }}">
+                <a href="/team/{{ $team.Alias }}/image/{{ $score.Image.Name }}">
                 {{ $score.ElapsedTimeStr }}
                 </a>
             </td>
             <td>
-                <a href="/team/{{ $team.Alias }}/image/{{ $score.Image }}">
+                <a href="/team/{{ $team.Alias }}/image/{{ $score.Image.Name }}">
                 {{ $score.Vulns.VulnsScored}}
                 </a>
             </td>
             <td>
-                <a href="/team/{{ $team.Alias }}/image/{{ $score.Image }}">
+                <a href="/team/{{ $team.Alias }}/image/{{ $score.Image.Name }}">
                 {{ $score.Vulns.VulnsTotal}}
                 </a>
             </td>
             <td>
-                <a href="/team/{{ $team.Alias }}/image/{{ $score.Image }}">
+                <a href="/team/{{ $team.Alias }}/image/{{ $score.Image.Name }}">
                 {{ $score.Points }}
                 </a>
             </td>
@@ -127,6 +127,12 @@
                 }
             },
             scales: {
+                xAxes: [{
+                    ticks: {
+                        maxRotation: 0,
+                        minRoation: 0
+                    }
+                }],
                 yAxes: [{
                     ticks: {
                         beginAtZero: true,

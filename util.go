@@ -56,7 +56,6 @@ func formatTime(dur time.Duration) string {
 	return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
 }
 
-
 func calcPlayTime(newEntry *scoreEntry) error {
 	threshhold, _ := time.ParseDuration("5m")
 	recentRecord, err := getLastScore(newEntry)
@@ -96,7 +95,7 @@ func calcElapsedTime(newEntry *scoreEntry) error {
 func consolidateRecords(allRecords []scoreEntry, images []ImageData) ([]ImageData, []string) {
 	imageRecords := []time.Time{}
 
-    timeStr := "2006-01-02 15:04"
+	timeStr := "2006-01-02 15:04"
 	if len(allRecords) <= 0 {
 		return images, []string{}
 	}
@@ -105,24 +104,29 @@ func consolidateRecords(allRecords []scoreEntry, images []ImageData) ([]ImageDat
 	for i, image := range images {
 		fmt.Println("PROCESSING IMAGE", image)
 		currentRecord := scoreEntry{}
-	    for _, record := range allRecords {
-			if record.Image == image.Name {
+
+		for _, record := range allRecords {
+			if record.Image.Name == image.Name {
+				record.Time = record.Time.Round(time.Minute)
 				if currentRecord.Time.IsZero() {
 					fmt.Println("======= setting time ======", record.Time)
 					currentRecord = record
 				}
 				fmt.Println("CHECKING RECORD", record.Time)
-		        if record.Time.Format(timeStr) != currentRecord.Time.Format(timeStr) {
+				if record.Time.Format(timeStr) != currentRecord.Time.Format(timeStr) {
 					fmt.Println("ADDING new image record, lol:", currentRecord.Time, "versus new", record.Time)
-		            images[i].Records = append(images[i].Records, currentRecord)
-		            imageRecords = append(imageRecords, currentRecord.Time)
+					images[i].Records = append(images[i].Records, currentRecord)
+					imageRecords = append(imageRecords, currentRecord.Time)
 				}
 				currentRecord = record
 			}
-	    }
-		fmt.Println("ADDING new image record, lol:", currentRecord.Time)
-        images[i].Records = append(images[i].Records, currentRecord)
-        imageRecords = append(imageRecords, currentRecord.Time)
+		}
+
+		if !currentRecord.Time.IsZero() {
+			fmt.Println("ADDING new image record, lol:", currentRecord.Time)
+			images[i].Records = append(images[i].Records, currentRecord)
+			imageRecords = append(imageRecords, currentRecord.Time)
+		}
 	}
 
 	sort.SliceStable(imageRecords, func(i, j int) bool {
@@ -130,7 +134,6 @@ func consolidateRecords(allRecords []scoreEntry, images []ImageData) ([]ImageDat
 	})
 
 	if len(imageRecords) <= 0 {
-		fmt.Println("NO IMAGE RECORDS!")
 		return images, []string{}
 	}
 
@@ -140,7 +143,7 @@ func consolidateRecords(allRecords []scoreEntry, images []ImageData) ([]ImageDat
 }
 
 func generateLabels(firstTime, lastTime time.Time) []string {
-    timeStr := "2006-01-02 15:04"
+	timeStr := "2006-01-02 15:04"
 	timeDiff := lastTime.Sub(firstTime).Round(time.Minute)
 	labels := []string{}
 	fmt.Println("FIRSTITME", firstTime, "LASTTIME", lastTime)

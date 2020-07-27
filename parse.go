@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-    "sort"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-    "github.com/pkg/errors"
+	"github.com/pkg/errors"
 )
 
 func parseUpdate(cryptUpdate string) (scoreEntry, error) {
@@ -42,12 +42,12 @@ func parseUpdate(cryptUpdate string) (scoreEntry, error) {
 	}
 	newEntry := scoreEntry{
 		Time:   time.Now(),
-		Team:   mapUpdate["team"],
-		Image:  mapUpdate["image"],
+		Team:   getTeam(mapUpdate["team"]),
+		Image:  getImage(mapUpdate["image"]),
 		Vulns:  vulns,
 		Points: pointValue,
 	}
-    fmt.Println("newenntry", newEntry)
+	fmt.Println("newenntry", newEntry)
 	calcPlayTime(&newEntry)
 	calcElapsedTime(&newEntry)
 	return newEntry, nil
@@ -130,9 +130,9 @@ func parseScoresIntoTeams(scores []scoreEntry) ([]teamData, error) {
 	currentTeam := scores[0].Team
 
 	for _, score := range scores {
-		if currentTeam != score.Team {
+		if currentTeam.Id != score.Team.Id {
 			td = append(td, teamData{
-				Team:       getTeam(currentTeam),
+				Team:       currentTeam,
 				ImageCount: imageCount,
 				Score:      totalScore,
 				Time:       formatTime(playTime),
@@ -148,7 +148,7 @@ func parseScoresIntoTeams(scores []scoreEntry) ([]teamData, error) {
 	}
 
 	td = append(td, teamData{
-		Team:       getTeam(scores[len(scores)-1].Team),
+		Team:       scores[len(scores)-1].Team,
 		ImageCount: imageCount,
 		Score:      totalScore,
 		Time:       formatTime(playTime),

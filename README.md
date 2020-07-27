@@ -14,11 +14,11 @@ password = "mypassword:)"
 
 [[image]]
 name = "Linux-Machine"
-color = "rgb(0,213,3)" # Optional
+color = "#ff00ff" # Optional
 
 [[image]]
 name = "Windows-Machine"
-color = "rgb(123,213,222)"
+color = "#00ff00"
 
 [[team]]
 id = "MyId1"
@@ -30,3 +30,6 @@ id = "MyId2"
 alias = "CoolTeam2"
 email = "coolteam2@example.org"
 ```
+
+Known issues:
+- Elapsed time calculation appears to be borked

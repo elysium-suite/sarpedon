@@ -74,7 +74,7 @@ func viewImage(c *gin.Context) {
 	}
 	filteredScores := []scoreEntry{}
 	for _, score := range teamScores {
-		if score.Image == imageName {
+		if score.Image.Name == imageName {
 			filteredScores = append(filteredScores, score)
 		}
 	}
@@ -82,7 +82,7 @@ func viewImage(c *gin.Context) {
 	if err != nil {
 		panic(err)
 	}
-	c.HTML(http.StatusOK, "index.html", pageData(c, "Scoreboard for "+imageName, gin.H{"scores": teamData, "imageFilter": imageName, "event": sarpConfig.Event}))
+	c.HTML(http.StatusOK, "index.html", pageData(c, "Scoreboard for "+imageName, gin.H{"scores": teamData, "imageFilter": getImage(imageName), "event": sarpConfig.Event}))
 }
 
 func viewTeam(c *gin.Context) {
@@ -137,7 +137,7 @@ func viewTeamImage(c *gin.Context) {
 		return
 	}
 	images, labels := consolidateRecords(getAll(teamName, imageName), []ImageData{getImage(imageName)})
-	c.HTML(http.StatusOK, "detail.html", pageData(c, "Scoreboard for "+teamName+" "+imageName, gin.H{"data": teamScore, "team": teamData, "imageFilter": imageName, "labels": labels, "images": images}))
+	c.HTML(http.StatusOK, "detail.html", pageData(c, "Scoreboard for "+teamName+" "+imageName, gin.H{"data": teamScore, "team": teamData, "imageFilter": getImage(imageName), "labels": labels, "images": images}))
 }
 
 func getStatus(c *gin.Context) {

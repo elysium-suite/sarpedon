@@ -25,8 +25,8 @@ type teamData struct {
 
 type scoreEntry struct {
 	Time           time.Time     `json:"time,omitempty"`
-	Team           string        `json:"team,omitempty"`
-	Image          string        `json:"image,omitempty"`
+	Team           TeamData      `json:"team,omitempty"`
+	Image          ImageData     `json:"image,omitempty"`
 	Vulns          vulnWrapper   `json:"vulns,omitempty"`
 	Points         int           `json:"points,omitempty"`
 	PlayTime       time.Duration `json:"playtime,omitempty"`
@@ -73,13 +73,13 @@ func getAll(teamName, imageName string) []scoreEntry {
 
 	if imageName != "" {
 		fmt.Println("image specificed, searching for all records ")
-		cursor, err = coll.Find(context.TODO(), bson.D{{"team", teamObj.Id}, {"image", imageName}}, findOptions)
+		cursor, err = coll.Find(context.TODO(), bson.D{{"team.id", teamObj.Id}, {"image", getImage(imageName)}}, findOptions)
 		if err != nil {
 			panic(err)
 		}
 	} else {
 		fmt.Println("no imag, seaaaaarrchchhin", teamObj.Id, imageName)
-		cursor, err = coll.Find(context.TODO(), bson.D{{"team", teamObj.Id}}, findOptions)
+		cursor, err = coll.Find(context.TODO(), bson.D{{"team.id", teamObj.Id}}, findOptions)
 		if err != nil {
 			panic(err)
 		}
@@ -158,11 +158,10 @@ func getCsv() string {
 	}
 	csvString := "Email,Alias,Team Id,Image,Score,Play Time,Elapsed Time\n"
 	for _, score := range teamScores {
-		teamObj := getTeam(score.Team)
-		csvString += teamObj.Email + ","
-		csvString += teamObj.Alias + ","
-		csvString += teamObj.Id + ","
-		csvString += score.Image + ","
+		csvString += score.Team.Email + ","
+		csvString += score.Team.Alias + ","
+		csvString += score.Team.Id + ","
+		csvString += score.Image.Name + ","
 		csvString += fmt.Sprintf("%d,", score.Points)
 		csvString += formatTime(score.PlayTime) + ","
 		csvString += formatTime(score.ElapsedTime) + "\n"
@@ -183,7 +182,7 @@ func getScore(teamName, imageName string) []scoreEntry {
 				panic(err)
 			}
 			for _, score := range teamScores {
-				if score.Image == imageName && score.Team == teamObj.Id {
+				if score.Image.Name == imageName && score.Team.Id == teamObj.Id {
 					fmt.Println("found it bro", score)
 					scoreResults = append(scoreResults, score)
 				}
@@ -201,7 +200,7 @@ func getScore(teamName, imageName string) []scoreEntry {
 					panic(err)
 				}
 				for _, score := range teamScores {
-					if score.Image == image.Name && score.Team == teamObj.Id {
+					if score.Image.Name == image.Name && score.Team.Id == teamObj.Id {
 						fmt.Println("found it bro", score)
 						scoreResults = append(scoreResults, score)
 					}
@@ -221,18 +220,17 @@ func insertScore(newEntry scoreEntry) error {
 	client, ctx := initDatabase()
 	defer client.Disconnect(ctx)
 	collection := client.Database(dbName).Collection("results")
-	insertedScore, err := collection.InsertOne(context.TODO(), newEntry)
-	cachedImageData[newEntry.Team+"@"+newEntry.Image] = newEntry
+	_, err := collection.InsertOne(context.TODO(), newEntry)
+	cachedImageData[newEntry.Team.Id+"@"+newEntry.Image.Name] = newEntry
 	if err != nil {
 		return err
 	}
-	fmt.Println("inserted with id", insertedScore.InsertedID)
 	return nil
 }
 
 func getLastScore(newEntry *scoreEntry) (scoreEntry, error) {
 	// Cached image data stored in format teamId@image
-	if data, ok := cachedImageData[newEntry.Team+"@"+newEntry.Image]; ok {
+	if data, ok := cachedImageData[newEntry.Team.Id+"@"+newEntry.Image.Name]; ok {
 		fmt.Println("using cached", data)
 		fmt.Println("comapred to newentry", newEntry)
 		return data, nil
@@ -240,7 +238,7 @@ func getLastScore(newEntry *scoreEntry) (scoreEntry, error) {
 		scores, err := getScores()
 		if err == nil {
 			for _, score := range scores {
-				if score.Team == newEntry.Team && score.Image == newEntry.Image {
+				if score.Team.Id == newEntry.Team.Id && score.Image.Name == newEntry.Image.Name {
 					fmt.Println("found score", score)
 					fmt.Println("comapred to newentry", newEntry)
 					return score, nil

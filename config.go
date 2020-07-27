@@ -20,7 +20,7 @@ type AdminData struct {
 
 type ImageData struct {
 	Name, Color string
-	Records []scoreEntry
+	Records     []scoreEntry
 }
 
 type TeamData struct {
@@ -30,27 +30,23 @@ type TeamData struct {
 func readConfig(conf *Config) {
 	fileContent, err := ioutil.ReadFile("./sarpedon.conf")
 	if err != nil {
-		log.Fatalln("bad conf")
+		log.Fatalln("Configuration file (./sarpedon.conf) not found:", err)
 	}
 	if _, err := toml.Decode(string(fileContent), &conf); err != nil {
-		log.Fatalln("bad toml")
+		log.Fatalln(err)
 	}
 }
 
 func checkConfig() {
-
 	if sarpConfig.Password == "" {
 		log.Fatalln("No password provided!")
 	}
-
 	if sarpConfig.Admin == nil {
 		log.Fatalln("No admin account(s) provided!")
 	}
-
 	if sarpConfig.Image == nil {
 		log.Fatalln("No images provided!")
 	}
-
 	for _, image := range sarpConfig.Image {
 		if image.Name == "" {
 			log.Fatalln("Image name is empty:", image)

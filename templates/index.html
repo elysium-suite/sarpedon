@@ -17,9 +17,11 @@
     {{ end }}
     <div class="filterbuttons">
         {{ if $imageFilter }}
-        <p style="color: white; margin-right: 1rem;">
-            Only showing <b>{{ $imageFilter }}!</b>
+        <p style="color: white; argin-right: 1rem;">
+            Only showing <span style="color: {{ $imageFilter.Color }}"><b>{{ $imageFilter.Name }}!</b></span>
         </p>
+        &nbsp;
+        &nbsp;
         {{ else }}
         <p style="color: white; margin-right: 1rem;">
             Filter by image:
@@ -27,8 +29,8 @@
         {{ end }}
         <div class="btn-group btn-group-sm" role="group">
             {{ range $image := .config.Image }}
-            <button type="button" class="btn btn-dark">
-                <a href="/image/{{ $image.Name }}">
+            <button type="button" class="btn btn-dark" >
+                <a href="/image/{{ $image.Name }}" style="color: {{ $image.Color }}">
                     {{ $image.Name }}
                 </a>
             </button>
@@ -47,7 +49,9 @@
     <table class="table table-borderless table-dark table-hover scoreboard">
             <thead class="thead-dark">
                 <th>Team</th>
+                {{ if not $imageFilter }}
                 <th>Image(s)</th>
+                {{ end }}
                 <th>Play Time</th>
                 <th>Score</th>
             </thead>
@@ -55,7 +59,7 @@
                 {{ range $team := .scores }}
                 {{ $linktext := "" }}
                 {{ if $imageFilter }}
-                    {{ $linktext = (print "/team/" $team.Team.Alias "/image/" $imageFilter) }}
+                    {{ $linktext = (print "/team/" $team.Team.Alias "/image/" $imageFilter.Name) }}
                 {{ else }}
                     {{ $linktext = (print "/team/" $team.Team.Alias) }}
                 {{ end }}
@@ -65,11 +69,13 @@
                             {{ $team.Team.Alias }}
                         </a>
                     </td>
+                    {{ if not $imageFilter }}
                     <td>
                         <a href="{{ $linktext }}">
                             {{ $team.ImageCount }}
                         </a>
                     </td>
+                    {{ end }}
                     <td>
                         <a href="{{ $linktext }}">
                             {{ $team.Time }}
