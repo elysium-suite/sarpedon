@@ -59,14 +59,14 @@
                 {{ range $team := .scores }}
                 {{ $linktext := "" }}
                 {{ if $imageFilter }}
-                    {{ $linktext = (print "/team/" $team.Team.Alias "/image/" $imageFilter.Name) }}
+                    {{ $linktext = (print "/team/" $team.Alias "/image/" $imageFilter.Name) }}
                 {{ else }}
-                    {{ $linktext = (print "/team/" $team.Team.Alias) }}
+                    {{ $linktext = (print "/team/" $team.Alias) }}
                 {{ end }}
                 <tr>
                     <td>
                         <a href="{{ $linktext }}">
-                            {{ $team.Team.Alias }}
+                            {{ $team.Alias }}
                         </a>
                     </td>
                     {{ if not $imageFilter }}

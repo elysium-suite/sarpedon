@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var sarpConfig = Config{}
+var sarpConfig = config{}
 
 func main() {
 
@@ -29,7 +29,6 @@ func main() {
 			c.HTML(http.StatusOK, "login.html", pageData(c, "login", nil))
 		})
 		routes.GET("/", viewScoreboard)
-		routes.POST("/login", login)
 		routes.GET("/status", getStatus)
 		routes.POST("/update", scoreUpdate)
 		routes.GET("/team/:team", viewTeam)
@@ -60,7 +59,7 @@ func viewScoreboard(c *gin.Context) {
 	if err != nil {
 		panic(err)
 	}
-	c.HTML(http.StatusOK, "index.html", pageData(c, "Scoreboard", gin.H{"scores": teamData, "event": sarpConfig.Event}))
+	c.HTML(http.StatusOK, "index.html", pageData(c, "Scoreboard", gin.H{"scores": teamData}))
 }
 
 func viewImage(c *gin.Context) {
@@ -110,7 +109,7 @@ func viewTeam(c *gin.Context) {
 		return
 	}
 	allRecords := getAll(teamName, "")
-	imageCopies := []ImageData{}
+	imageCopies := []imageData{}
 	for _, image := range sarpConfig.Image {
 		imageCopies = append(imageCopies, image)
 	}
@@ -143,8 +142,8 @@ func viewTeamImage(c *gin.Context) {
 		errorOut(c, errors.New("Parsing team scores failed"))
 		return
 	}
-	images, labels := consolidateRecords(getAll(teamName, imageName), []ImageData{getImage(imageName)})
-	c.HTML(http.StatusOK, "detail.html", pageData(c, "Scoreboard for "+teamName+" "+imageName, gin.H{"data": teamScore, "team": teamData, "imageFilter": getImage(imageName), "labels": labels, "images": images}))
+	images, labels := consolidateRecords(getAll(teamName, imageName), []imageData{getImage(imageName)})
+	c.HTML(http.StatusOK, "detail.html", pageData(c, "Scoreboard for "+teamName+"'s "+imageName, gin.H{"data": teamScore, "team": teamData, "imageFilter": getImage(imageName), "labels": labels, "images": images}))
 }
 
 func getStatus(c *gin.Context) {
@@ -181,7 +180,7 @@ func pageData(c *gin.Context, title string, ginMap gin.H) gin.H {
 	newGinMap := gin.H{}
 	newGinMap["title"] = title
 	newGinMap["user"] = getUser(c)
-	fmt.Println("user is", newGinMap["user"])
+	newGinMap["event"] = sarpConfig.Event
 	newGinMap["config"] = sarpConfig
 	for key, value := range ginMap {
 		newGinMap[key] = value

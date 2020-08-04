@@ -16,17 +16,10 @@ var dbName = "sarpedon"
 var dbUri = "mongodb://localhost:27017"
 var cachedImageData = make(map[string]scoreEntry)
 
-type teamData struct {
-	Team       TeamData
-	ImageCount int
-	Score      int
-	Time       string
-}
-
 type scoreEntry struct {
 	Time           time.Time     `json:"time,omitempty"`
-	Team           TeamData      `json:"team,omitempty"`
-	Image          ImageData     `json:"image,omitempty"`
+	Team           teamData      `json:"team,omitempty"`
+	Image          imageData     `json:"image,omitempty"`
 	Vulns          vulnWrapper   `json:"vulns,omitempty"`
 	Points         int           `json:"points,omitempty"`
 	Penalties      int           `json:"penalties,omitempty"`

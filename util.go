@@ -21,22 +21,22 @@ func errorOutGraceful(c *gin.Context, err error) {
 	c.Abort()
 }
 
-func getTeam(teamProp string) TeamData {
+func getTeam(teamProp string) teamData {
 	for _, team := range sarpConfig.Team {
 		if team.Id == teamProp || team.Email == teamProp || team.Alias == teamProp {
 			return team
 		}
 	}
-	return TeamData{}
+	return teamData{}
 }
 
-func getImage(imageName string) ImageData {
+func getImage(imageName string) imageData {
 	for _, image := range sarpConfig.Image {
 		if image.Name == imageName {
 			return image
 		}
 	}
-	return ImageData{}
+	return imageData{}
 }
 
 func formatTime(dur time.Duration) string {
@@ -92,7 +92,7 @@ func calcElapsedTime(newEntry *scoreEntry) error {
 	return nil
 }
 
-func consolidateRecords(allRecords []scoreEntry, images []ImageData) ([]ImageData, []string) {
+func consolidateRecords(allRecords []scoreEntry, images []imageData) ([]imageData, []string) {
 	imageRecords := []time.Time{}
 
 	timeStr := "2006-01-02 15:04"

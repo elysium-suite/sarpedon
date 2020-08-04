@@ -6,28 +6,30 @@ import (
 	"log"
 )
 
-type Config struct {
+type config struct {
 	Event    string
 	Password string
-	Admin    []AdminData
-	Image    []ImageData
-	Team     []TeamData
+	Admin    []adminData
+	Image    []imageData
+	Team     []teamData
 }
 
-type AdminData struct {
+type adminData struct {
 	Username, Password string
 }
 
-type ImageData struct {
+type imageData struct {
 	Name, Color string
 	Records     []scoreEntry
 }
 
-type TeamData struct {
-	Id, Alias, Email string
+type teamData struct {
+	Id, Alias, Email  string
+	ImageCount, Score int
+	Time              string
 }
 
-func readConfig(conf *Config) {
+func readConfig(conf *config) {
 	fileContent, err := ioutil.ReadFile("./sarpedon.conf")
 	if err != nil {
 		log.Fatalln("Configuration file (./sarpedon.conf) not found:", err)
@@ -52,7 +54,7 @@ func checkConfig() {
 			log.Fatalln("Image name is empty:", image)
 		}
 		matches := 0
-		var dupeImage ImageData
+		var dupeImage imageData
 		for _, imageDupe := range sarpConfig.Image {
 			if image.Name == imageDupe.Name {
 				dupeImage = imageDupe
@@ -72,7 +74,7 @@ func checkConfig() {
 			log.Fatalln("Team alias is empty:", team)
 		}
 		matches := 0
-		var dupeTeam TeamData
+		var dupeTeam teamData
 		for _, teamDupe := range sarpConfig.Team {
 			if team.Id == teamDupe.Id {
 				dupeTeam = teamDupe

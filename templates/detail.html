@@ -4,12 +4,12 @@
 <script src="/assets/charts.js"></script>
 
 <h2>Leaderboard</h2><br>
-<h4>Team: <i>{{ .team.Team.Alias }}</i></h4>
+<h4>Team: <i>{{ .team.Alias }}</i></h4>
 <br>
 {{ if .imageFilter }}
 <h4>
     <button class="btn btn-lg btn-dark">
-        <a href="/team/{{ .team.Team.Alias }}">
+        <a href="/team/{{ .team.Alias }}">
             Only showing data for <span style="color: {{ .imageFilter.Color }}">{{ .imageFilter.Name }}.</span>
         </a>
     </button>
@@ -31,7 +31,7 @@
     </tbody>
 </table>
 
-{{ $team := .team.Team }}
+{{ $team := .team }}
 
 <!-- Current image scores -->
 <br><h4>Current Image Scores</h4><br>
@@ -40,8 +40,8 @@
         <th>Image</th>
         <th>Play Time</th>
         <th>Elapsed Time</th>
-        <th>Found</th>
-        <th>Total</th>
+        <th>Found Vulns</th>
+        <th>Total Vulns</th>
         <th>Penalties</th>
         <th>Points</th>
     </thead>
@@ -135,13 +135,14 @@
             scales: {
                 xAxes: [{
                     ticks: {
-                        maxRotation: 90,
-                        minRoation: 90
+                        maxRotation: 0,
+                        minRotation: 0
                     }
                 }],
                 yAxes: [{
                     ticks: {
                         beginAtZero: true,
+                        suggestedMax: 100,
                         maxTicksLimit: 5,
                         stepSize: 1
                     }
@@ -180,5 +181,7 @@
 <br>
 {{ end }}
 {{ end }}
+<br>
+<br>
 
 {{ template "feet.html" }}
