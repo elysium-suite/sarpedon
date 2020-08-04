@@ -83,7 +83,7 @@ func getAll(teamName, imageName string) []scoreEntry {
 		panic(err)
 	}
 
-	fmt.Println("all score results", scores)
+	// fmt.Println("all score results", scores)
 	return scores
 }
 
@@ -97,11 +97,17 @@ func getScores() ([]scoreEntry, error) {
 	groupStage := bson.D{
 		{"$group", bson.D{
 			{"_id", bson.D{
-				{"image", "$image"},
-				{"team", "$team"},
+				{"image", "$image.name"},
+				{"team", "$team.id"},
 			}},
 			{"time", bson.D{
 				{"$min", "$time"},
+			}},
+			{"team", bson.D{
+				{"$last", "$team"},
+			}},
+			{"image", bson.D{
+				{"$last", "$image"},
 			}},
 			{"points", bson.D{
 				{"$last", "$points"},
@@ -121,8 +127,8 @@ func getScores() ([]scoreEntry, error) {
 	projectStage := bson.D{
 		{"$project", bson.D{
 			{"time", "$time"},
-			{"team", "$_id.team"},
-			{"image", "$_id.image"},
+			{"team", "$team"},
+			{"image", "$image"},
 			{"points", "$points"},
 			{"playtime", "$playtime"},
 			{"elapsedtime", "$elapsedtime"},

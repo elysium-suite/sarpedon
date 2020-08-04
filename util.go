@@ -138,7 +138,7 @@ func consolidateRecords(allRecords []scoreEntry, images []imageData) ([]imageDat
 	}
 
 	labels := generateLabels(imageRecords[0], imageRecords[len(imageRecords)-1])
-	fmt.Println("final labels", labels)
+	// fmt.Println("final labels", labels)
 	return images, labels
 }
 

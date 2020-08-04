@@ -30,6 +30,7 @@ func main() {
 		})
 		routes.GET("/", viewScoreboard)
 		routes.GET("/status", getStatus)
+		routes.POST("/login", login)
 		routes.POST("/update", scoreUpdate)
 		routes.GET("/team/:team", viewTeam)
 		routes.GET("/image/:image", viewImage)

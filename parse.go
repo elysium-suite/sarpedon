@@ -83,7 +83,7 @@ func parseVulns(vulnText string, imagePoints int) (vulnWrapper, error) {
 	splitVulns = splitVulns[2 : len(splitVulns)-1]
 	for _, vuln := range splitVulns {
 		splitVuln := strings.Split(vuln, "-")
-		fmt.Println("splitvulns", splitVuln, "len", len(splitVuln))
+		// fmt.Println("splitvulns", splitVuln, "len", len(splitVuln))
 		if len(splitVuln) < 2 {
 			return wrapper, errors.New(fmt.Sprintln("Error splitting vuln on delimiter:", splitVuln, "length of", len(splitVuln)))
 		}
@@ -96,7 +96,7 @@ func parseVulns(vulnText string, imagePoints int) (vulnWrapper, error) {
 			}
 			vulnText += subString
 		}
-		fmt.Println("BRUH vulnText", vulnText)
+		// fmt.Println("BRUH vulnText", vulnText)
 
 		splitVuln = strings.Split(strings.TrimSpace(splitVuln[len(splitVuln)-1]), " ")
 		if len(splitVuln) != 2 {
@@ -111,7 +111,7 @@ func parseVulns(vulnText string, imagePoints int) (vulnWrapper, error) {
 			return wrapper, errors.New("Error parsing vuln point value")
 		}
 		pointTotal += vulnPoints
-		fmt.Println("appending", vulnText, vulnPoints)
+		// fmt.Println("appending", vulnText, vulnPoints)
 		wrapper.VulnItems = append(wrapper.VulnItems, vulnItem{VulnText: vulnText, VulnPoints: vulnPoints})
 	}
 	if pointTotal != imagePoints {
