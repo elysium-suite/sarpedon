@@ -2,18 +2,34 @@
 
 Simple and very fast [aeacus](https://github.com/sourque/aeacus) endpoint.
 
+## Installation
+
+```bash
+cd /opt
+git clone https://github.com/sourque/sarpedon
+bash /opt/sarpedon/misc/install.sh
+```
+
+## Usage
+```bash
+cd /opt/sarpedon
+go build # Builds sarpedon binary
+touch sarpedon.conf
+./sarpedon # After you finish your sarpedon.conf
+```
+
 Example configuration (`sarpedon.conf`):
 
-```
-event = "My Event"
-password = "s3cr3tP4ssw0rd"
+```toml
+event = "My Event" # Event name
+password = "s3cr3tP4ssw0rd" # Needed for scoring request encryption
 
-[[admin]]
+[[admin]] # Admin account to view vulnerabilities scored
 username = "admin"
 password = "mypassword:)"
 
 [[image]]
-name = "Linux-Machine"
+name = "Linux-Machine" # Image name set in Aeacus engine configuration
 color = "#ff00ff" # Optional
 
 [[image]]
@@ -31,5 +47,5 @@ alias = "CoolTeam2"
 email = "coolteam2@example.org"
 ```
 
-Known issues:
+## Known Issues
 - Elapsed time calculation appears to be borked
