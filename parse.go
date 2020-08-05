@@ -139,16 +139,18 @@ func parseScoresIntoTeams(scores []scoreEntry) ([]teamData, error) {
 		return td, nil
 	}
 
+	sort.SliceStable(scores, func(i, j int) bool {
+		return scores[i].Team.Id < scores[j].Team.Id
+	})
+
 	imageCount := 0
 	totalScore := 0
 	playTime, _ := time.ParseDuration("0s")
 	currentTeam := scores[0].Team
 
-	sort.SliceStable(scores, func(i, j int) bool {
-		return scores[i].Team.Id < scores[j].Team.Id
-	})
-
 	for _, score := range scores {
+		fmt.Println("Currentteam is", currentTeam)
+		fmt.Println("Processing", score.Team.Id, score.Image.Name)
 		if currentTeam.Id != score.Team.Id {
 			td = append(td, teamData{
 				Id:         currentTeam.Id,

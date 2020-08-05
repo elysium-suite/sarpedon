@@ -3,12 +3,20 @@ package main
 import (
 	"errors"
 	"fmt"
+	"flag"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 var sarpConfig = config{}
+var debugEnabled = false
+
+func init() {
+	flag.BoolVar(&debugEnabled, "d", false, "Print verbose debug information")
+	flag.Parse()
+}
+
 
 func main() {
 
@@ -52,7 +60,6 @@ func main() {
 
 func viewScoreboard(c *gin.Context) {
 	teamScores, err := getScores()
-	fmt.Println("teamscoreS", teamScores)
 	if err != nil {
 		panic(err)
 	}
@@ -66,7 +73,7 @@ func viewScoreboard(c *gin.Context) {
 func viewImage(c *gin.Context) {
 	imageName := c.Param("image")
 	if !validateString(imageName) {
-		errorOut(c, errors.New("Invalid team name"))
+		errorOut(c, errors.New("Invalid image name: " + imageName))
 	}
 	teamScores, err := getScores()
 	if err != nil {
@@ -88,7 +95,7 @@ func viewImage(c *gin.Context) {
 func viewTeam(c *gin.Context) {
 	teamName := c.Param("team")
 	if !validateString(teamName) || !validateTeam(teamName) {
-		errorOutGraceful(c, errors.New("Invalid team name"))
+		errorOutGraceful(c, errors.New("Invalid team name: " + teamName))
 		return
 	}
 	teamScore := getScore(teamName, "")
