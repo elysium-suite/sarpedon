@@ -15,6 +15,7 @@ bash /opt/sarpedon/misc/install.sh
 cd /opt/sarpedon
 go build # Builds sarpedon binary
 touch sarpedon.conf
+./sarpedon # After you finish your sarpedon.conf
 ```
 
 Example configuration (`sarpedon.conf`):
@@ -45,5 +46,6 @@ id = "MyId2"
 alias = "CoolTeam2"
 email = "coolteam2@example.org"
 ```
+
 ## Known Issues
 - Elapsed time calculation appears to be borked
