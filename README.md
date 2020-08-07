@@ -7,15 +7,14 @@ Simple and very fast [aeacus](https://github.com/sourque/aeacus) endpoint.
 ```bash
 cd /opt
 git clone https://github.com/sourque/sarpedon
-bash /opt/sarpedon/misc/install.sh
+cd sarpedon
+bash install.sh
 ```
 
 ## Usage
+
 ```bash
-cd /opt/sarpedon
-go build # Builds sarpedon binary
-touch sarpedon.conf
-./sarpedon # After you finish your sarpedon.conf
+./sarpedon
 ```
 
 Example configuration (`sarpedon.conf`):
@@ -29,7 +28,7 @@ username = "admin"
 password = "mypassword:)"
 
 [[image]]
-name = "Linux-Machine" # Image name set in Aeacus engine configuration
+name = "Linux-Machine" # Image name set in vulnerability remediation engine configuration
 color = "#ff00ff" # Optional
 
 [[image]]
@@ -47,5 +46,4 @@ alias = "CoolTeam2"
 email = "coolteam2@example.org"
 ```
 
-## Known Issues
-- Elapsed time calculation appears to be borked
+Don't know what to use this with? Try [aeacus](https://github.com/sourque/aeacus).

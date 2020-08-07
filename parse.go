@@ -11,7 +11,6 @@ import (
 )
 
 func parseUpdate(cryptUpdate string) (scoreEntry, error) {
-
 	if cryptUpdate == "" || !validateString(cryptUpdate) {
 		return scoreEntry{}, errors.New("Empty or invalid characters in cryptUpdate.")
 	}
@@ -41,22 +40,28 @@ func parseUpdate(cryptUpdate string) (scoreEntry, error) {
 		return scoreEntry{}, err
 	}
 	newEntry := scoreEntry{
-		Time:   time.Now(),
+		Time:   time.Now().UTC(),
 		Team:   getTeam(mapUpdate["team"]),
 		Image:  getImage(mapUpdate["image"]),
 		Vulns:  vulns,
 		Points: pointValue,
 	}
 	fmt.Println("newenntry", newEntry)
-	calcPlayTime(&newEntry)
-	calcElapsedTime(&newEntry)
+	lastRecord, err := getLastScore(&newEntry)
+	if err != nil {
+		lastRecord = scoreEntry{}
+	}
+	calcPlayTime(&newEntry, &lastRecord)
+	calcElapsedTime(&newEntry, &lastRecord)
+	newEntry.PlayTimeStr = formatTime(newEntry.PlayTime)
+	newEntry.ElapsedTimeStr = formatTime(newEntry.ElapsedTime)
+	replaceScore(&newEntry)
 	return newEntry, nil
 }
 
 func parseVulns(vulnText string, imagePoints int) (vulnWrapper, error) {
 	wrapper := vulnWrapper{}
 	vulnText, err := hexDecode(vulnText)
-
 	if err != nil {
 		return wrapper, errors.New("Error decoding hex input.")
 	}

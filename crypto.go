@@ -16,7 +16,6 @@ var delimiter = "|-S#-|"
 // sequence (as a string). It uses AES-GCM with a 12-byte IV (as is
 // recommended). The IV is prefixed to the string.
 func encryptString(password, plaintext string) string {
-
 	// Create a sha256sum hash of the password provided.
 	hasher := sha256.New()
 	hasher.Write([]byte(password))
@@ -60,7 +59,6 @@ func encryptString(password, plaintext string) string {
 // decryptString takes a password and a ciphertext and returns a decrypted
 // byte sequence (as a string). The function uses typical AES-GCM.
 func decryptString(password, ciphertext string) (string, error) {
-
 	hasher := sha256.New()
 	hasher.Write([]byte(password))
 	key := hasher.Sum(nil)

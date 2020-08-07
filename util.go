@@ -41,53 +41,64 @@ func getImage(imageName string) imageData {
 
 func formatTime(dur time.Duration) string {
 	durSeconds := dur.Microseconds() / 1000000
-	fmt.Println("=======")
-	fmt.Println("durnum", durSeconds)
+	if debugEnabled {
+		fmt.Println("=======")
+		fmt.Println("durnum", durSeconds)
+	}
 	seconds := durSeconds % 60
-	fmt.Println("seconds", seconds)
+	if debugEnabled {
+		fmt.Println("seconds", seconds)
+	}
 	durSeconds -= seconds
-	fmt.Println("durnum", durSeconds)
+	if debugEnabled {
+		fmt.Println("durnum", durSeconds)
+	}
 	minutes := (durSeconds % (60 * 60)) / 60
-	fmt.Println("minutes", minutes)
+	if debugEnabled {
+		fmt.Println("minutes", minutes)
+	}
 	durSeconds -= minutes * 60
-	fmt.Println("durnum", durSeconds)
+	if debugEnabled {
+		fmt.Println("durnum", durSeconds)
+	}
 	hours := durSeconds / (60 * 60)
-	fmt.Println("hours", hours)
+	if debugEnabled {
+		fmt.Println("hours", hours)
+	}
 	return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
 }
 
-func calcPlayTime(newEntry *scoreEntry) error {
-	threshhold, _ := time.ParseDuration("5m")
-	recentRecord, err := getLastScore(newEntry)
+func calcPlayTime(newEntry, lastEntry *scoreEntry) error {
 	var timeDifference time.Duration
-	if err != nil {
+	threshold, _ := time.ParseDuration("5m")
+	if lastEntry.Time.IsZero() {
 		fmt.Println("playtime: no previous record! time is 0")
 		timeDifference, _ = time.ParseDuration("0s")
 	} else {
-		timeDifference = newEntry.Time.Sub(recentRecord.Time)
+		timeDifference = newEntry.Time.Sub(lastEntry.Time)
 		fmt.Println("playtime: time diff is", timeDifference)
 	}
-	if timeDifference < threshhold {
+	fmt.Println("PLAYITIME: Old record is", lastEntry.Time, "NEW RECORD is", newEntry.Time)
+	if timeDifference < threshold {
 		fmt.Println("Adding timediff for playtime", timeDifference)
-		newEntry.PlayTime = recentRecord.PlayTime + timeDifference
+		newEntry.PlayTime = lastEntry.PlayTime + timeDifference
 	} else {
-		newEntry.PlayTime = recentRecord.PlayTime
+		newEntry.PlayTime = lastEntry.PlayTime
 	}
 	return nil
 }
 
-func calcElapsedTime(newEntry *scoreEntry) error {
-	recentRecord, err := getLastScore(newEntry)
+func calcElapsedTime(newEntry, lastEntry *scoreEntry) error {
 	var timeDifference time.Duration
-	if err != nil {
+	if lastEntry.Time.IsZero() {
 		fmt.Println("elaptime: no previous record! time is 0")
 		timeDifference, _ = time.ParseDuration("0s")
 	} else {
-		timeDifference = newEntry.Time.Sub(recentRecord.Time)
+		timeDifference = newEntry.Time.Sub(lastEntry.Time)
 		fmt.Println("elaptime: time diff is", timeDifference)
 	}
 	fmt.Println("Adding timediff for elaptime", timeDifference)
-	newEntry.ElapsedTime = recentRecord.ElapsedTime + timeDifference
+	newEntry.ElapsedTime = lastEntry.ElapsedTime + timeDifference
 	fmt.Println("Elaptime is now", newEntry.ElapsedTime)
 	return nil
 }
@@ -109,12 +120,12 @@ func consolidateRecords(allRecords []scoreEntry, images []imageData) ([]imageDat
 			if record.Image.Name == image.Name {
 				record.Time = record.Time.Round(time.Minute)
 				if currentRecord.Time.IsZero() {
-					fmt.Println("======= setting time ======", record.Time)
+					// fmt.Println("======= setting time ======", record.Time)
 					currentRecord = record
 				}
-				fmt.Println("CHECKING RECORD", record.Time)
+				// fmt.Println("CHECKING RECORD", record.Time)
 				if record.Time.Format(timeStr) != currentRecord.Time.Format(timeStr) {
-					fmt.Println("ADDING new image record, lol:", currentRecord.Time, "versus new", record.Time)
+					// fmt.Println("ADDING new image record, lol:", currentRecord.Time, "versus new", record.Time)
 					images[i].Records = append(images[i].Records, currentRecord)
 					imageRecords = append(imageRecords, currentRecord.Time)
 				}
@@ -123,7 +134,7 @@ func consolidateRecords(allRecords []scoreEntry, images []imageData) ([]imageDat
 		}
 
 		if !currentRecord.Time.IsZero() {
-			fmt.Println("ADDING new image record, lol:", currentRecord.Time)
+			// fmt.Println("ADDING new image record, lol:", currentRecord.Time)
 			images[i].Records = append(images[i].Records, currentRecord)
 			imageRecords = append(imageRecords, currentRecord.Time)
 		}

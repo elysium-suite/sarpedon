@@ -46,7 +46,7 @@ func login(c *gin.Context) {
 		return
 	}
 
-	var err = errors.New("Invalid username or password.")
+	err := errors.New("Invalid username or password.")
 
 	for _, record := range sarpConfig.Admin {
 		if username == record.Username && password == record.Password {

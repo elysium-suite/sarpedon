@@ -2,14 +2,12 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"regexp"
 	"strings"
 )
 
 func validateUpdate(plainUpdate string) error {
 	splitUpdate := strings.Split(plainUpdate, delimiter)[:12]
-	fmt.Println("splitUpdate", splitUpdate, "len", len(splitUpdate))
 
 	for _, item := range splitUpdate {
 		if !validateString(item) {

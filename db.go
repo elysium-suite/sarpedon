@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,9 +12,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var dbName = "sarpedon"
-var dbUri = "mongodb://localhost:27017"
-var cachedImageData = make(map[string]scoreEntry)
+var (
+	dbName      = "sarpedon"
+	dbUri       = "mongodb://localhost:27017"
+	mongoClient *mongo.Client
+	mongoCtx    context.Context
+	timeConn    time.Time
+)
 
 type scoreEntry struct {
 	Time           time.Time     `json:"time,omitempty"`
@@ -34,30 +38,48 @@ type vulnWrapper struct {
 	VulnsTotal  int        `json:"vulnstotal,omitempty"`
 	VulnItems   []vulnItem `json:"vulnitems,omitempty"`
 }
+
 type vulnItem struct {
 	VulnText   string `json:"vulntext,omitempty"`
 	VulnPoints int    `json:"vulnpoints,omitempty"`
 }
 
-func initDatabase() (*mongo.Client, context.Context) {
-	client, err := mongo.NewClient(options.Client().ApplyURI(dbUri))
-	if err != nil {
-		log.Fatal(err)
+func initDatabase() {
+	threshold, _ := time.ParseDuration("20s")
+	refresh := false
+
+	if timeConn.IsZero() {
+		refresh = true
+	} else {
+		err := mongoClient.Ping(context.TODO(), nil)
+		if err != nil {
+			refresh = true
+		} else if time.Now().Sub(timeConn) > threshold {
+			refresh = true
+			mongoClient.Disconnect(mongoCtx)
+		}
 	}
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	err = client.Connect(ctx)
-	if err != nil {
-		log.Fatal(err)
+
+	if refresh {
+		client, err := mongo.NewClient(options.Client().ApplyURI(dbUri))
+		if err != nil {
+			log.Fatal(err)
+		} else {
+			mongoClient = client
+		}
+		ctx, _ := context.WithTimeout(context.Background(), 20*time.Second)
+		err = client.Connect(ctx)
+		if err != nil {
+			log.Fatal(err)
+		} else {
+			mongoCtx = ctx
+		}
 	}
-	return client, ctx
 }
 
 func getAll(teamName, imageName string) []scoreEntry {
-	client, ctx := initDatabase()
-	defer client.Disconnect(ctx)
-
 	scores := []scoreEntry{}
-	coll := client.Database(dbName).Collection("results")
+	coll := mongoClient.Database(dbName).Collection("results")
 	teamObj := getTeam(teamName)
 	findOptions := options.Find()
 	findOptions.SetSort(bson.D{{"time", 1}})
@@ -79,7 +101,7 @@ func getAll(teamName, imageName string) []scoreEntry {
 		}
 	}
 
-	if err := cursor.All(ctx, &scores); err != nil {
+	if err := cursor.All(mongoCtx, &scores); err != nil {
 		panic(err)
 	}
 
@@ -87,12 +109,36 @@ func getAll(teamName, imageName string) []scoreEntry {
 	return scores
 }
 
-func getScores() ([]scoreEntry, error) {
-	client, ctx := initDatabase()
-	defer client.Disconnect(ctx)
+func initScoreboard() {
+	initDatabase()
+	coll := mongoClient.Database(dbName).Collection("scoreboard")
+	err := coll.Drop(mongoCtx)
+	if err != nil {
+		fmt.Println("error dropping scoreboard:", err)
+		os.Exit(1)
+	}
+	topBoard, err := getScores()
+	if err != nil {
+		fmt.Println("error fetching scores:", err)
+		os.Exit(1)
+	}
+	if len(topBoard) > 0 {
+		topBoardInterface := []interface{}{}
+		for _, item := range topBoard {
+			topBoardInterface = append(topBoardInterface, item)
+		}
+		_, err = coll.InsertMany(context.TODO(), topBoardInterface, nil)
+		if err != nil {
+			fmt.Println("error inserting scores:", err)
+			os.Exit(1)
+		}
+	}
+}
 
+func getScores() ([]scoreEntry, error) {
+	initDatabase()
 	scores := []scoreEntry{}
-	coll := client.Database(dbName).Collection("results")
+	coll := mongoClient.Database(dbName).Collection("results")
 
 	groupStage := bson.D{
 		{"$group", bson.D{
@@ -101,7 +147,7 @@ func getScores() ([]scoreEntry, error) {
 				{"team", "$team.id"},
 			}},
 			{"time", bson.D{
-				{"$min", "$time"},
+				{"$max", "$time"},
 			}},
 			{"team", bson.D{
 				{"$last", "$team"},
@@ -118,6 +164,12 @@ func getScores() ([]scoreEntry, error) {
 			{"elapsedtime", bson.D{
 				{"$last", "$elapsedtime"},
 			}},
+			{"playtimestr", bson.D{
+				{"$last", "$playtimestr"},
+			}},
+			{"elapsedtimestr", bson.D{
+				{"$last", "$elapsedtimestr"},
+			}},
 			{"vulns", bson.D{
 				{"$last", "$vulns"},
 			}},
@@ -132,14 +184,33 @@ func getScores() ([]scoreEntry, error) {
 			{"points", "$points"},
 			{"playtime", "$playtime"},
 			{"elapsedtime", "$elapsedtime"},
+			{"playtimestr", "$playtimestr"},
+			{"elapsedtimestr", "$elapsedtimestr"},
 			{"vulns", "$vulns"},
 		}},
 	}
 
-	opts := options.Aggregate().SetMaxTime(2 * time.Second)
+	opts := options.Aggregate()
 
 	cursor, err := coll.Aggregate(context.TODO(), mongo.Pipeline{groupStage, projectStage}, opts)
+	if err != nil {
+		return scores, err
+	}
 
+	if err = cursor.All(context.TODO(), &scores); err != nil {
+		return scores, err
+	}
+
+	return scores, nil
+}
+
+func getTop() ([]scoreEntry, error) {
+	initDatabase()
+	scores := []scoreEntry{}
+	coll := mongoClient.Database(dbName).Collection("scoreboard")
+
+	opts := options.Find()
+	cursor, err := coll.Find(context.TODO(), bson.D{}, opts)
 	if err != nil {
 		return scores, err
 	}
@@ -152,7 +223,7 @@ func getScores() ([]scoreEntry, error) {
 }
 
 func getCsv() string {
-	teamScores, err := getScores()
+	teamScores, err := getTop()
 	if err != nil {
 		panic(err)
 	}
@@ -172,56 +243,47 @@ func getCsv() string {
 func getScore(teamName, imageName string) []scoreEntry {
 	scoreResults := []scoreEntry{}
 	teamObj := getTeam(teamName)
+	teamScores, err := getTop()
+	if err != nil {
+		panic(err)
+	}
 	if imageName != "" {
-		if data, ok := cachedImageData[teamObj.Id+"@"+imageName]; ok {
-			scoreResults = append(scoreResults, data)
-		} else {
-			fmt.Println("fetching new score for", teamObj.Id, imageName)
-			teamScores, err := getScores()
-			if err != nil {
-				panic(err)
-			}
-			for _, score := range teamScores {
-				if score.Image.Name == imageName && score.Team.Id == teamObj.Id {
-					fmt.Println("found it bro", score)
-					scoreResults = append(scoreResults, score)
-				}
+		for _, score := range teamScores {
+			if score.Image.Name == imageName && score.Team.Id == teamObj.Id {
+				scoreResults = append(scoreResults, score)
 			}
 		}
 	} else {
 		for _, image := range sarpConfig.Image {
-			if data, ok := cachedImageData[teamObj.Id+"@"+image.Name]; ok {
-				fmt.Println("found cached image data for", teamName, data)
-				scoreResults = append(scoreResults, data)
-			} else {
-				fmt.Println("fetching new score for", teamObj.Id, image.Name)
-				teamScores, err := getScores()
-				if err != nil {
-					panic(err)
-				}
-				for _, score := range teamScores {
-					if score.Image.Name == image.Name && score.Team.Id == teamObj.Id {
-						fmt.Println("found it bro", score)
-						scoreResults = append(scoreResults, score)
-					}
+			for _, score := range teamScores {
+				if score.Image.Name == image.Name && score.Team.Id == teamObj.Id {
+					scoreResults = append(scoreResults, score)
 				}
 			}
 		}
 	}
 
-	for index, result := range scoreResults {
-		scoreResults[index].PlayTimeStr = formatTime(result.PlayTime)
-		scoreResults[index].ElapsedTimeStr = formatTime(result.ElapsedTime)
-	}
 	return scoreResults
 }
 
 func insertScore(newEntry scoreEntry) error {
-	client, ctx := initDatabase()
-	defer client.Disconnect(ctx)
-	collection := client.Database(dbName).Collection("results")
-	_, err := collection.InsertOne(context.TODO(), newEntry)
-	cachedImageData[newEntry.Team.Id+"@"+newEntry.Image.Name] = newEntry
+	initDatabase()
+	coll := mongoClient.Database(dbName).Collection("results")
+	_, err := coll.InsertOne(context.TODO(), newEntry)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func replaceScore(newEntry *scoreEntry) error {
+	initDatabase()
+	coll := mongoClient.Database(dbName).Collection("scoreboard")
+	_, err := coll.DeleteOne(context.TODO(), bson.D{{"image.name", newEntry.Image.Name}, {"team.id", newEntry.Team.Id}})
+	if err != nil {
+		return err
+	}
+	_, err = coll.InsertOne(context.TODO(), newEntry)
 	if err != nil {
 		return err
 	}
@@ -229,22 +291,13 @@ func insertScore(newEntry scoreEntry) error {
 }
 
 func getLastScore(newEntry *scoreEntry) (scoreEntry, error) {
-	// Cached image data stored in format teamId@image
-	if data, ok := cachedImageData[newEntry.Team.Id+"@"+newEntry.Image.Name]; ok {
-		fmt.Println("using cached", data)
-		fmt.Println("comapred to newentry", newEntry)
-		return data, nil
-	} else {
-		scores, err := getScores()
-		if err == nil {
-			for _, score := range scores {
-				if score.Team.Id == newEntry.Team.Id && score.Image.Name == newEntry.Image.Name {
-					fmt.Println("found score", score)
-					fmt.Println("comapred to newentry", newEntry)
-					return score, nil
-				}
-			}
-		}
+	initDatabase()
+	score := scoreEntry{}
+	coll := mongoClient.Database(dbName).Collection("scoreboard")
+
+	err := coll.FindOne(context.TODO(), bson.D{{"image.name", newEntry.Image.Name}, {"team.id", newEntry.Team.Id}}).Decode(&score)
+	if err != nil {
+		fmt.Println("error finding last score:", err)
 	}
-	return scoreEntry{}, errors.New("Couldn't find last image record")
+	return score, err
 }
