@@ -45,7 +45,6 @@ type vulnItem struct {
 }
 
 func initDatabase() {
-	threshold, _ := time.ParseDuration("20s")
 	refresh := false
 
 	if timeConn.IsZero() {
@@ -54,13 +53,13 @@ func initDatabase() {
 		err := mongoClient.Ping(context.TODO(), nil)
 		if err != nil {
 			refresh = true
-		} else if time.Now().Sub(timeConn) > threshold {
-			refresh = true
 			mongoClient.Disconnect(mongoCtx)
 		}
 	}
+	timeConn = time.Now()
 
 	if refresh {
+		fmt.Println("Refreshing mongodb connection...")
 		client, err := mongo.NewClient(options.Client().ApplyURI(dbUri))
 		if err != nil {
 			log.Fatal(err)
