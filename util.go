@@ -91,15 +91,11 @@ func calcPlayTime(newEntry, lastEntry *scoreEntry) error {
 func calcElapsedTime(newEntry, lastEntry *scoreEntry) error {
 	var timeDifference time.Duration
 	if lastEntry.Time.IsZero() {
-		fmt.Println("elaptime: no previous record! time is 0")
 		timeDifference, _ = time.ParseDuration("0s")
 	} else {
 		timeDifference = newEntry.Time.Sub(lastEntry.Time)
-		fmt.Println("elaptime: time diff is", timeDifference)
 	}
-	fmt.Println("Adding timediff for elaptime", timeDifference)
 	newEntry.ElapsedTime = lastEntry.ElapsedTime + timeDifference
-	fmt.Println("Elaptime is now", newEntry.ElapsedTime)
 	return nil
 }
 
@@ -111,9 +107,7 @@ func consolidateRecords(allRecords []scoreEntry, images []imageData) ([]imageDat
 		return images, []string{}
 	}
 
-	fmt.Println("UHH, LIKE IMAGES ARE TOTALLY", images)
 	for i, image := range images {
-		fmt.Println("PROCESSING IMAGE", image)
 		currentRecord := scoreEntry{}
 
 		for _, record := range allRecords {

@@ -27,7 +27,7 @@ func parseUpdate(cryptUpdate string) (scoreEntry, error) {
 	}
 
 	mapUpdate := make(map[string]string)
-	splitUpdate := strings.Split(plainUpdate, delimiter)[:13]
+	splitUpdate := strings.Split(plainUpdate, delimiter)[:15]
 	for i := 0; i < len(splitUpdate)-2; i += 2 {
 		mapUpdate[splitUpdate[i]] = splitUpdate[i+1]
 	}
@@ -39,14 +39,30 @@ func parseUpdate(cryptUpdate string) (scoreEntry, error) {
 	if err != nil {
 		return scoreEntry{}, err
 	}
+
+	debugLog := ""
+	decryptedDebugSlice := strings.Split(mapUpdate["debug"], "|-D#-|")
+	if len(decryptedDebugSlice) != 0 {
+		decryptedDebugSlice = decryptedDebugSlice[:len(decryptedDebugSlice)-1]
+		for i, lg := range decryptedDebugSlice {
+			decrypted, err := decryptString(sarpConfig.Password, lg)
+			if err != nil {
+				fmt.Println("error decrypting debug item", i)
+			} else {
+				debugLog += decrypted + "\n"
+			}
+		}
+
+	}
 	newEntry := scoreEntry{
 		Time:   time.Now().UTC(),
 		Team:   getTeam(mapUpdate["team"]),
 		Image:  getImage(mapUpdate["image"]),
 		Vulns:  vulns,
+		Debug:  debugLog,
 		Points: pointValue,
 	}
-	fmt.Println("newenntry", newEntry)
+	// fmt.Println("newenntry", newEntry)
 	lastRecord, err := getLastScore(&newEntry)
 	if err != nil {
 		lastRecord = scoreEntry{}

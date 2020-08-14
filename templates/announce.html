@@ -1,0 +1,20 @@
+{{ template "head.html" . }}
+{{ template "nav.html" . }}
+{{ $imageFilter := .imageFilter }}
+
+<div class="container">
+    <h2>Announcements</h2>
+    <br>
+    {{ if .announcements }}
+        {{ range $announce := .announcements }}
+            <h6 style="text-align: left">{{ $announce.Time.Format "2006-01-02 15:04:05 MST" }}</h6>
+            <h3>{{ $announce.Title }}</h3>
+            <p style="text-align: left">{{ $announce.Body }}</p>
+            <br><br>
+        {{ end }}
+    {{ else }}
+        <p>No announcements at the moment!</p>
+    {{ end }}
+</div>
+
+{{ template "feet.html" }}

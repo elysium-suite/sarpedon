@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"time"
@@ -25,6 +26,7 @@ type scoreEntry struct {
 	Team           teamData      `json:"team,omitempty"`
 	Image          imageData     `json:"image,omitempty"`
 	Vulns          vulnWrapper   `json:"vulns,omitempty"`
+	Debug          string        `json:"debug,omitempty"`
 	Points         int           `json:"points,omitempty"`
 	Penalties      int           `json:"penalties,omitempty"`
 	PlayTime       time.Duration `json:"playtime,omitempty"`
@@ -42,6 +44,37 @@ type vulnWrapper struct {
 type vulnItem struct {
 	VulnText   string `json:"vulntext,omitempty"`
 	VulnPoints int    `json:"vulnpoints,omitempty"`
+}
+
+type adminData struct {
+	Username, Password string
+}
+
+type imageData struct {
+	Name, Color string
+	Records     []scoreEntry
+	Index       int
+}
+
+type imageShell struct {
+	Waiting     bool
+	Active      bool
+	StdinRead   *io.PipeReader
+	StdinWrite  *io.PipeWriter
+	StdoutRead  *io.PipeReader
+	StdoutWrite *io.PipeWriter
+}
+
+type teamData struct {
+	Id, Alias, Email  string
+	ImageCount, Score int
+	Time              string
+}
+
+type announcement struct {
+	Time  time.Time
+	Title string
+	Body  string
 }
 
 func initDatabase() {
@@ -66,7 +99,7 @@ func initDatabase() {
 		} else {
 			mongoClient = client
 		}
-		ctx, _ := context.WithTimeout(context.Background(), 20*time.Second)
+		ctx := context.TODO()
 		err = client.Connect(ctx)
 		if err != nil {
 			log.Fatal(err)
@@ -172,6 +205,9 @@ func getScores() ([]scoreEntry, error) {
 			{"vulns", bson.D{
 				{"$last", "$vulns"},
 			}},
+			{"debug", bson.D{
+				{"$last", "$debug"},
+			}},
 		}},
 	}
 
@@ -186,6 +222,7 @@ func getScores() ([]scoreEntry, error) {
 			{"playtimestr", "$playtimestr"},
 			{"elapsedtimestr", "$elapsedtimestr"},
 			{"vulns", "$vulns"},
+			{"debug", "$debug"},
 		}},
 	}
 

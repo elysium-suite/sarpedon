@@ -15,21 +15,6 @@ type config struct {
 	Team     []teamData
 }
 
-type adminData struct {
-	Username, Password string
-}
-
-type imageData struct {
-	Name, Color string
-	Records     []scoreEntry
-}
-
-type teamData struct {
-	Id, Alias, Email  string
-	ImageCount, Score int
-	Time              string
-}
-
 func readConfig(conf *config) {
 	fileContent, err := ioutil.ReadFile("./sarpedon.conf")
 	if err != nil {

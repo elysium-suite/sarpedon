@@ -5,13 +5,17 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 var (
-	sarpConfig   = config{}
-	debugEnabled = false
+	sarpConfig        = config{}
+	sarpAnnouncements = []announcement{}
+	sarpShells        = make(map[string]map[string]*imageShell)
+	debugEnabled      = false
 )
 
 func init() {
@@ -37,12 +41,15 @@ func main() {
 			c.HTML(http.StatusOK, "login.html", pageData(c, "login", nil))
 		})
 		routes.GET("/", viewScoreboard)
-		routes.GET("/status", getStatus)
+		routes.GET("/announcements", viewAnnounce)
+		routes.GET("/status/:id/:image", getStatus)
 		routes.POST("/login", login)
 		routes.POST("/update", scoreUpdate)
 		routes.GET("/team/:team", viewTeam)
 		routes.GET("/image/:image", viewImage)
 		routes.GET("/team/:team/image/:image", viewTeamImage)
+		routes.GET("/shell/:id/:image/clientInput", shellClientInput)
+		routes.GET("/shell/:id/:image/clientOutput", shellClientOutput)
 	}
 
 	authRoutes := routes.Group("/")
@@ -52,6 +59,9 @@ func main() {
 		authRoutes.GET("/settings", viewSettings)
 		authRoutes.POST("/settings", changeSettings)
 		authRoutes.GET("/export", exportCsv)
+		authRoutes.GET("/shell/:id/:image", getShell)
+		authRoutes.GET("/shell/:id/:image/serverInput", shellServerInput)
+		authRoutes.GET("/shell/:id/:image/serverOutput", shellServerOutput)
 	}
 
 	fmt.Println("Initializing scoreboard data...")
@@ -124,6 +134,19 @@ func viewTeam(c *gin.Context) {
 		imageCopies = append(imageCopies, image)
 	}
 	images, labels := consolidateRecords(allRecords, imageCopies)
+	for index := range images {
+		recordIndex := c.Request.URL.Query().Get("record" + strconv.Itoa(index))
+		if recordIndex != "" {
+			images[index].Index, err = strconv.Atoi(recordIndex)
+			if err != nil {
+				errorOutGraceful(c, errors.New("Invalid record number given"))
+				return
+			}
+		} else {
+			images[index].Index = len(images[index].Records) - 1
+		}
+	}
+
 	c.HTML(http.StatusOK, "detail.html", pageData(c, "Scoreboard for "+teamName, gin.H{"data": teamScore, "team": teamData, "labels": labels, "images": images}))
 }
 
@@ -157,11 +180,45 @@ func viewTeamImage(c *gin.Context) {
 }
 
 func getStatus(c *gin.Context) {
+	image, err := initShell(c)
+	if err != nil {
+		errorOut(c, err)
+		return
+	}
+	if image.Waiting {
+		c.JSON(200, gin.H{"status": "GIMMESHELL"})
+		return
+	}
 	c.JSON(200, gin.H{"status": "OK"})
+}
+
+func getShell(c *gin.Context) {
+	image, err := initShell(c)
+	if err != nil {
+		errorOutGraceful(c, err)
+		return
+	}
+	fmt.Println("*****************")
+	fmt.Println("IMAGE ACTIVE FOR", image, "is", image.Active)
+	fmt.Println("*****************")
+	teamId := c.Param("id")
+	imageName := c.Param("image")
+	if image.Active == true {
+		c.HTML(http.StatusOK, "shell.html", pageData(c, "shell", gin.H{"team": getTeam(teamId), "image": getImage(imageName), "error": "Shell is currently in use!"}))
+		return
+	}
+	image.Active = true
+	image.Waiting = true
+	c.HTML(http.StatusOK, "shell.html", pageData(c, "shell", gin.H{"team": getTeam(teamId), "image": getImage(imageName)}))
 }
 
 func viewSettings(c *gin.Context) {
 	c.HTML(http.StatusOK, "settings.html", pageData(c, "settings", nil))
+}
+
+func viewAnnounce(c *gin.Context) {
+	fmt.Println("sarpannoucmenetsi s", sarpAnnouncements)
+	c.HTML(http.StatusOK, "announce.html", pageData(c, "announcements", gin.H{"announcements": sarpAnnouncements}))
 }
 
 func scoreUpdate(c *gin.Context) {
@@ -172,7 +229,7 @@ func scoreUpdate(c *gin.Context) {
 		errorOut(c, err)
 		return
 	}
-	fmt.Println("newscore is", newScore)
+	// fmt.Println("newscore is", newScore)
 	err = insertScore(newScore)
 	if err != nil {
 		errorOut(c, err)
@@ -183,7 +240,10 @@ func scoreUpdate(c *gin.Context) {
 
 func changeSettings(c *gin.Context) {
 	c.Request.ParseForm()
-	c.HTML(http.StatusOK, "index.html", pageData(c, "lists", nil))
+	announceTitle := c.Request.Form.Get("title")
+	announceBody := c.Request.Form.Get("body")
+	sarpAnnouncements = append([]announcement{{time.Now(), announceTitle, announceBody}}, sarpAnnouncements...)
+	c.HTML(http.StatusOK, "settings.html", pageData(c, "settings", nil))
 }
 
 func pageData(c *gin.Context, title string, ginMap gin.H) gin.H {
