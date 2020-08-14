@@ -114,11 +114,12 @@
             document.getElementById("send").onclick = handleSend(evt);
             document.getElementById("close").onclick = function(evt) {
                 console.log("closing both")
-                if (!stdin || !stdout) {
-                    return false;
+                if (stdin) {
+                    stdin.close();
                 }
-                stdout.close();
-                stdin.close();
+                if (stdout) {
+                    stdout.close();
+                }
                 return false;
             };
             document.getElementById("clear").onclick = function(evt) {

@@ -198,17 +198,16 @@ func getShell(c *gin.Context) {
 		errorOutGraceful(c, err)
 		return
 	}
-	fmt.Println("*****************")
-	fmt.Println("IMAGE ACTIVE FOR", image, "is", image.Active)
-	fmt.Println("*****************")
 	teamId := c.Param("id")
 	imageName := c.Param("image")
 	if image.Active == true {
 		c.HTML(http.StatusOK, "shell.html", pageData(c, "shell", gin.H{"team": getTeam(teamId), "image": getImage(imageName), "error": "Shell is currently in use!"}))
 		return
 	}
-	image.Active = true
-	image.Waiting = true
+	refreshShell(teamId, imageName, image)
+	fmt.Println("*****************")
+	fmt.Println("IMAGE ACTIVE FOR", image, "is", image.Active)
+	fmt.Println("*****************")
 	c.HTML(http.StatusOK, "shell.html", pageData(c, "shell", gin.H{"team": getTeam(teamId), "image": getImage(imageName)}))
 }
 

@@ -32,13 +32,10 @@ func initShell(c *gin.Context) (*imageShell, error) {
 		return &imageShell{}, err
 	}
 
-	fmt.Println("FETCHING FOR teamid", teamId, "imageName", imageName)
 	image := &imageShell{}
 	if img, ok := sarpShells[teamId][imageName]; ok {
-		fmt.Println("found image alread made", img)
 		image = img
 	} else {
-		fmt.Println("making new img", img)
 		refreshShell(teamId, imageName, image)
 	}
 	return image, nil
@@ -56,7 +53,13 @@ func shellServerInput(c *gin.Context) {
 		return
 	}
 	defer cn.Close()
+	fmt.Println("SETTING image.ACTIVE TO TRUE")
+	image.Active = true
+	image.Waiting = true
 	for {
+		if !image.Active {
+			break
+		}
 		_, message, err := cn.ReadMessage()
 		if err != nil {
 			fmt.Println("read 1:", err)
@@ -72,8 +75,8 @@ func shellServerInput(c *gin.Context) {
 			break
 		}
 	}
+	fmt.Println("SETTING ACTIVE TO FALSE")
 	image.Active = false
-	image.Waiting = false
 	fmt.Println("sending exit 1")
 	fmt.Fprintf(image.StdinWrite, "exit")
 }
@@ -91,12 +94,27 @@ func shellServerOutput(c *gin.Context) {
 		return
 	}
 	defer cn.Close()
+	buffer := make([]byte, 1024)
+	n, err := image.StdoutRead.Read(buffer)
+	if err != nil {
+		fmt.Println("initial stdoutread:", err)
+		image.Active = false
+		return
+	}
+	err = cn.WriteMessage(1, buffer[:n])
+	fmt.Println("Got connect message: " + string(buffer[:n]))
+	image.Waiting = false
 	for {
-		buffer := make([]byte, 1024)
-		n, _ := image.StdoutRead.Read(buffer)
+		if !image.Active {
+			break
+		}
+		n, err := image.StdoutRead.Read(buffer)
+		if err != nil {
+			fmt.Println("stdoutread:", err)
+			break
+		}
 		fmt.Println(timeOfCreation, "GOT INPUT FROM CLIENT YO", string(buffer))
 		err = cn.WriteMessage(1, buffer[:n])
-		image.Waiting = false
 		if err != nil {
 			fmt.Println("write:", err)
 			break
@@ -105,7 +123,7 @@ func shellServerOutput(c *gin.Context) {
 			break
 		}
 	}
-	image.Waiting = false
+	image.Active = false
 }
 
 func shellClientInput(c *gin.Context) {
@@ -121,6 +139,9 @@ func shellClientInput(c *gin.Context) {
 	}
 	defer cn.Close()
 	for {
+		if !image.Active {
+			break
+		}
 		buffer := make([]byte, 1024)
 		n, _ := image.StdinRead.Read(buffer)
 		fmt.Println("sending STDIN!!!!", string(buffer))
@@ -135,6 +156,7 @@ func shellClientInput(c *gin.Context) {
 	}
 	fmt.Println("sending exit 2")
 	err = cn.WriteMessage(1, []byte("exit"))
+	image.Active = false
 }
 
 func shellClientOutput(c *gin.Context) {
@@ -151,6 +173,9 @@ func shellClientOutput(c *gin.Context) {
 	defer cn.Close()
 	prevError := false
 	for {
+		if !image.Active {
+			break
+		}
 		_, message, err := cn.ReadMessage()
 		if err != nil {
 			fmt.Println("read 3:", err)
@@ -164,7 +189,6 @@ func shellClientOutput(c *gin.Context) {
 			}
 			break
 		}
-		fmt.Printf("writing to StdoutWrite: %s", message)
 		fmt.Fprintf(image.StdoutWrite, string(message))
 		if string(message) == "exit" {
 			break
@@ -175,4 +199,5 @@ func shellClientOutput(c *gin.Context) {
 		}
 	}
 	fmt.Fprintf(image.StdoutWrite, "exit")
+	image.Active = false
 }

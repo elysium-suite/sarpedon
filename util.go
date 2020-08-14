@@ -72,15 +72,11 @@ func calcPlayTime(newEntry, lastEntry *scoreEntry) error {
 	var timeDifference time.Duration
 	threshold, _ := time.ParseDuration("5m")
 	if lastEntry.Time.IsZero() {
-		fmt.Println("playtime: no previous record! time is 0")
 		timeDifference, _ = time.ParseDuration("0s")
 	} else {
 		timeDifference = newEntry.Time.Sub(lastEntry.Time)
-		fmt.Println("playtime: time diff is", timeDifference)
 	}
-	fmt.Println("PLAYITIME: Old record is", lastEntry.Time, "NEW RECORD is", newEntry.Time)
 	if timeDifference < threshold {
-		fmt.Println("Adding timediff for playtime", timeDifference)
 		newEntry.PlayTime = lastEntry.PlayTime + timeDifference
 	} else {
 		newEntry.PlayTime = lastEntry.PlayTime
