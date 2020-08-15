@@ -22,7 +22,7 @@ Example configuration (`sarpedon.conf`):
 ```toml
 event = "My Event" # Event name
 password = "s3cr3tP4ssw0rd" # Needed for scoring request encryption
-playtime_limit = "6h" # PlayTime limit in format https://godoc.org/time#ParseDuration
+playtime = "6h" # PlayTime limit in format https://godoc.org/time#ParseDuration
 
 [[admin]] # Admin account to view vulnerabilities scored
 username = "admin"

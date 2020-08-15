@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"log"
+	"time"
 
 	"github.com/BurntSushi/toml"
 )
@@ -10,6 +11,7 @@ import (
 type config struct {
 	Event    string
 	Password string
+	PlayTime string
 	Admin    []adminData
 	Image    []imageData
 	Team     []teamData
@@ -34,6 +36,11 @@ func checkConfig() {
 	}
 	if sarpConfig.Image == nil {
 		log.Fatalln("No images provided!")
+	}
+	if sarpConfig.PlayTime != "" {
+		if _, err := time.ParseDuration(sarpConfig.PlayTime); err != nil {
+			log.Fatalln("Invalid duration for playtime: " + err.Error())
+		}
 	}
 	for _, image := range sarpConfig.Image {
 		if image.Name == "" {

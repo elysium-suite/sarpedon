@@ -330,7 +330,6 @@ func getLastScore(newEntry *scoreEntry) (scoreEntry, error) {
 	initDatabase()
 	score := scoreEntry{}
 	coll := mongoClient.Database(dbName).Collection("scoreboard")
-
 	err := coll.FindOne(context.TODO(), bson.D{{"image.name", newEntry.Image.Name}, {"team.id", newEntry.Team.Id}}).Decode(&score)
 	if err != nil {
 		fmt.Println("error finding last score:", err)

@@ -189,6 +189,21 @@ func getStatus(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "GIMMESHELL"})
 		return
 	}
+	imageName := c.Param("image")
+	teamId := c.Param("id")
+	// Already checked for being a valid time on startup.
+	if sarpConfig.PlayTime != "" {
+
+		playTimeLimit, _ := time.ParseDuration(sarpConfig.PlayTime)
+		recentRecord, err := getLastScore(&scoreEntry{
+			Image: getImage(imageName),
+			Team:  getTeam(teamId),
+		})
+		if err == nil && recentRecord.PlayTime > playTimeLimit {
+			c.JSON(200, gin.H{"status": "DIE"})
+			return
+		}
+	}
 	c.JSON(200, gin.H{"status": "OK"})
 }
 
