@@ -126,7 +126,7 @@ func getAll(teamName, imageName string) []scoreEntry {
 			panic(err)
 		}
 	} else {
-		fmt.Println("no imag, seaaaaarrchchhin", teamObj.ID, imageName)
+		fmt.Println("No image, searching ", teamObj.ID, imageName)
 		cursor, err = coll.Find(context.TODO(), bson.D{{"team.id", teamObj.ID}}, findOptions)
 		if err != nil {
 			panic(err)
