@@ -7,10 +7,12 @@
     <br>
     {{ if .announcements }}
         {{ range $announce := .announcements }}
-            <h6 style="text-align: left">{{ $announce.Time.Format "2006-01-02 15:04:05 MST" }}</h6>
-            <h3>{{ $announce.Title }}</h3>
-            <p style="text-align: left">{{ $announce.Body }}</p>
-            <br><br>
+            <div style="width: 80%; margin: 0 auto;">
+                <h6 style="text-align: left">{{ $announce.Time.Format "2006-01-02 15:04:05 MST" }}</h6>
+                <h3>{{ $announce.Title }}</h3>
+                <p style="text-align: left">{{ $announce.Body }}</p>
+                <br><br>
+            </div>
         {{ end }}
     {{ else }}
         <p>No announcements at the moment!</p>
