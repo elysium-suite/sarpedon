@@ -12,18 +12,18 @@ import (
 
 var upgrader = websocket.Upgrader{}
 
-func refreshShell(teamId string, imageName string, image *imageShell) {
+func refreshShell(teamID, imageName string, image *imageShell) {
 	fmt.Println("Refreshing shell!")
 	image.StdinRead, image.StdinWrite = io.Pipe()
 	image.StdoutRead, image.StdoutWrite = io.Pipe()
-	sarpShells[teamId] = make(map[string]*imageShell)
-	sarpShells[teamId][imageName] = image
+	sarpShells[teamID] = make(map[string]*imageShell)
+	sarpShells[teamID][imageName] = image
 }
 
 func initShell(c *gin.Context) (*imageShell, error) {
-	teamId := c.Param("id")
-	if !validateTeam(teamId) {
-		err := errors.New("Invalid team id: " + teamId)
+	teamID := c.Param("id")
+	if !validateTeam(teamID) {
+		err := errors.New("Invalid team id: " + teamID)
 		return &imageShell{}, err
 	}
 	imageName := c.Param("image")
@@ -33,10 +33,10 @@ func initShell(c *gin.Context) (*imageShell, error) {
 	}
 
 	image := &imageShell{}
-	if img, ok := sarpShells[teamId][imageName]; ok {
+	if img, ok := sarpShells[teamID][imageName]; ok {
 		image = img
 	} else {
-		refreshShell(teamId, imageName, image)
+		refreshShell(teamID, imageName, image)
 	}
 	return image, nil
 }
@@ -180,10 +180,10 @@ func shellClientOutput(c *gin.Context) {
 		if err != nil {
 			fmt.Println("read 3:", err)
 			if !prevError {
-				teamId := c.Param("id")
+				teamID := c.Param("id")
 				imageName := c.Param("image")
 				fmt.Println("REFRESHING DUE TO READ ERROR!")
-				refreshShell(teamId, imageName, image)
+				refreshShell(teamID, imageName, image)
 				prevError = true
 				continue
 			}

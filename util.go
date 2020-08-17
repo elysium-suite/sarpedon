@@ -23,7 +23,7 @@ func errorOutGraceful(c *gin.Context, err error) {
 
 func getTeam(teamProp string) teamData {
 	for _, team := range sarpConfig.Team {
-		if team.Id == teamProp || team.Email == teamProp || team.Alias == teamProp {
+		if team.ID == teamProp || team.Email == teamProp || team.Alias == teamProp {
 			return team
 		}
 	}

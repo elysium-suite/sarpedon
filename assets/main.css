@@ -2,96 +2,99 @@
 –––––––––––––––––––––––––––––––––––––––––– */
 
 .filterbuttons {
-    display: flex;
-    justify-content: center;
-    align-items: baseline;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
 }
 
 .scoreboard td {
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .table td a {
-    display: block;
-    padding: 16px;
-    text-decoration: none;
+  display: block;
+  padding: 16px;
+  text-decoration: none;
 }
 
 .btn-group a {
-    display: block;
-    text-decoration: none;
+  display: block;
+  text-decoration: none;
 }
 
 .imgheader {
-    display: flex;
-    justify-content: center;
+  display: flex;
+  justify-content: center;
 }
 
 .imgheader h4 {
-    margin-right: 1rem;
-    display: inline-block;
+  margin-right: 1rem;
+  display: inline-block;
 }
 
 .imgheader input {
-    height: 2rem;
+  height: 2rem;
 }
 
 body {
-    background-color: #212529;
-    color: white;
+  background-color: #212529;
+  color: white;
 }
 
 h1 {
-    color: white;
+  color: white;
 }
 
-h2, h4, h6 {
-    color: white;
-    font-weight: bold;
-    text-align: center;
+h2,
+h4,
+h6 {
+  color: white;
+  font-weight: bold;
+  text-align: center;
 }
 
 p {
-    text-align: center;
-    color: white;
+  text-align: center;
+  color: white;
 }
 
-a, a:hover {
-    color: white;
+a,
+a:hover {
+  color: white;
 }
 
 nav {
-    background-color: #212529 !important;
-    color: black;
+  background-color: #212529 !important;
+  color: black;
 }
 
 table.table {
-    width:75%;
-    margin: auto;
-    text-align: center;
+  width: 75%;
+  margin: auto;
+  text-align: center;
 }
 
 td {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .cmdinput {
-    color: yellow;
+  color: yellow;
 }
 
 .cmdinput:before {
-    content: "root@box > "
+  content: "root@box > ";
 }
 
 .cmdinfo {
-    color: cyan;
+  color: cyan;
 }
 
 .cmdinfo:before {
-    content: "[INFO] "
+  content: "[INFO] ";
 }
 
 .cmdoutput {
-    color: pink;
+  color: pink;
 }
