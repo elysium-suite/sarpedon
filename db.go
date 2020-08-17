@@ -15,7 +15,7 @@ import (
 
 var (
 	dbName      = "sarpedon"
-	dbUri       = "mongodb://localhost:27017"
+	dbURI       = "mongodb://localhost:27017"
 	mongoClient *mongo.Client
 	mongoCtx    context.Context
 	timeConn    time.Time
@@ -66,7 +66,7 @@ type imageShell struct {
 }
 
 type teamData struct {
-	Id, Alias, Email  string
+	ID, Alias, Email  string
 	ImageCount, Score int
 	Time              string
 }
@@ -93,7 +93,7 @@ func initDatabase() {
 
 	if refresh {
 		fmt.Println("Refreshing mongodb connection...")
-		client, err := mongo.NewClient(options.Client().ApplyURI(dbUri))
+		client, err := mongo.NewClient(options.Client().ApplyURI(dbURI))
 		if err != nil {
 			log.Fatal(err)
 		} else {
@@ -121,13 +121,13 @@ func getAll(teamName, imageName string) []scoreEntry {
 
 	if imageName != "" {
 		fmt.Println("image specificed, searching for all records ")
-		cursor, err = coll.Find(context.TODO(), bson.D{{"team.id", teamObj.Id}, {"image", getImage(imageName)}}, findOptions)
+		cursor, err = coll.Find(context.TODO(), bson.D{{"team.id", teamObj.ID}, {"image", getImage(imageName)}}, findOptions)
 		if err != nil {
 			panic(err)
 		}
 	} else {
-		fmt.Println("no imag, seaaaaarrchchhin", teamObj.Id, imageName)
-		cursor, err = coll.Find(context.TODO(), bson.D{{"team.id", teamObj.Id}}, findOptions)
+		fmt.Println("no imag, seaaaaarrchchhin", teamObj.ID, imageName)
+		cursor, err = coll.Find(context.TODO(), bson.D{{"team.id", teamObj.ID}}, findOptions)
 		if err != nil {
 			panic(err)
 		}
@@ -263,11 +263,11 @@ func getCsv() string {
 	if err != nil {
 		panic(err)
 	}
-	csvString := "Email,Alias,Team Id,Image,Score,Play Time,Elapsed Time\n"
+	csvString := "Email,Alias,Team ID,Image,Score,Play Time,Elapsed Time\n"
 	for _, score := range teamScores {
 		csvString += score.Team.Email + ","
 		csvString += score.Team.Alias + ","
-		csvString += score.Team.Id + ","
+		csvString += score.Team.ID + ","
 		csvString += score.Image.Name + ","
 		csvString += fmt.Sprintf("%d,", score.Points)
 		csvString += formatTime(score.PlayTime) + ","
@@ -285,14 +285,14 @@ func getScore(teamName, imageName string) []scoreEntry {
 	}
 	if imageName != "" {
 		for _, score := range teamScores {
-			if score.Image.Name == imageName && score.Team.Id == teamObj.Id {
+			if score.Image.Name == imageName && score.Team.ID == teamObj.ID {
 				scoreResults = append(scoreResults, score)
 			}
 		}
 	} else {
 		for _, image := range sarpConfig.Image {
 			for _, score := range teamScores {
-				if score.Image.Name == image.Name && score.Team.Id == teamObj.Id {
+				if score.Image.Name == image.Name && score.Team.ID == teamObj.ID {
 					scoreResults = append(scoreResults, score)
 				}
 			}
@@ -315,7 +315,7 @@ func insertScore(newEntry scoreEntry) error {
 func replaceScore(newEntry *scoreEntry) error {
 	initDatabase()
 	coll := mongoClient.Database(dbName).Collection("scoreboard")
-	_, err := coll.DeleteOne(context.TODO(), bson.D{{"image.name", newEntry.Image.Name}, {"team.id", newEntry.Team.Id}})
+	_, err := coll.DeleteOne(context.TODO(), bson.D{{"image.name", newEntry.Image.Name}, {"team.id", newEntry.Team.ID}})
 	if err != nil {
 		return err
 	}
@@ -330,7 +330,7 @@ func getLastScore(newEntry *scoreEntry) (scoreEntry, error) {
 	initDatabase()
 	score := scoreEntry{}
 	coll := mongoClient.Database(dbName).Collection("scoreboard")
-	err := coll.FindOne(context.TODO(), bson.D{{"image.name", newEntry.Image.Name}, {"team.id", newEntry.Team.Id}}).Decode(&score)
+	err := coll.FindOne(context.TODO(), bson.D{{"image.name", newEntry.Image.Name}, {"team.id", newEntry.Team.ID}}).Decode(&score)
 	if err != nil {
 		fmt.Println("error finding last score:", err)
 	}

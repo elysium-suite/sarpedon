@@ -60,7 +60,7 @@ func checkConfig() {
 	}
 
 	for _, team := range sarpConfig.Team {
-		if team.Id == "" {
+		if team.ID == "" {
 			log.Fatalln("Team id is empty:", team)
 		}
 		if team.Alias == "" {
@@ -69,7 +69,7 @@ func checkConfig() {
 		matches := 0
 		var dupeTeam teamData
 		for _, teamDupe := range sarpConfig.Team {
-			if team.Id == teamDupe.Id {
+			if team.ID == teamDupe.ID {
 				dupeTeam = teamDupe
 				matches++
 			}

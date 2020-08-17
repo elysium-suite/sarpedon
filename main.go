@@ -190,14 +190,14 @@ func getStatus(c *gin.Context) {
 		return
 	}
 	imageName := c.Param("image")
-	teamId := c.Param("id")
+	teamID := c.Param("id")
 	// Already checked for being a valid time on startup.
 	if sarpConfig.PlayTime != "" {
 
 		playTimeLimit, _ := time.ParseDuration(sarpConfig.PlayTime)
 		recentRecord, err := getLastScore(&scoreEntry{
 			Image: getImage(imageName),
-			Team:  getTeam(teamId),
+			Team:  getTeam(teamID),
 		})
 		if err == nil && recentRecord.PlayTime > playTimeLimit {
 			c.JSON(200, gin.H{"status": "DIE"})
@@ -213,17 +213,17 @@ func getShell(c *gin.Context) {
 		errorOutGraceful(c, err)
 		return
 	}
-	teamId := c.Param("id")
+	teamID := c.Param("id")
 	imageName := c.Param("image")
 	if image.Active == true {
-		c.HTML(http.StatusOK, "shell.html", pageData(c, "shell", gin.H{"team": getTeam(teamId), "image": getImage(imageName), "error": "Shell is currently in use!"}))
+		c.HTML(http.StatusOK, "shell.html", pageData(c, "shell", gin.H{"team": getTeam(teamID), "image": getImage(imageName), "error": "Shell is currently in use!"}))
 		return
 	}
-	refreshShell(teamId, imageName, image)
+	refreshShell(teamID, imageName, image)
 	fmt.Println("*****************")
 	fmt.Println("IMAGE ACTIVE FOR", image, "is", image.Active)
 	fmt.Println("*****************")
-	c.HTML(http.StatusOK, "shell.html", pageData(c, "shell", gin.H{"team": getTeam(teamId), "image": getImage(imageName)}))
+	c.HTML(http.StatusOK, "shell.html", pageData(c, "shell", gin.H{"team": getTeam(teamID), "image": getImage(imageName)}))
 }
 
 func viewSettings(c *gin.Context) {

@@ -37,7 +37,7 @@ func validateString(input string) bool {
 
 func validateTeam(teamName string) bool {
 	for _, team := range sarpConfig.Team {
-		if team.Id == teamName {
+		if team.ID == teamName {
 			return true
 		}
 		if team.Alias == teamName {
