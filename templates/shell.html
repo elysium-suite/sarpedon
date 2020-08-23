@@ -61,7 +61,7 @@
             };
             var remote = false;
             if (!stdin) {
-                stdin = new WebSocket("ws://localhost:4013/shell/{{ .team.Id }}/{{ .image.Name }}/serverInput");
+                stdin = new WebSocket("ws://localhost:4013/shell/{{ .team.ID }}/{{ .image.Name }}/serverInput");
                 stdin.onopen = function(evt) {
                     printInfo("Opened stdin.");
                 }
@@ -80,7 +80,7 @@
             }
 
             if (!stdout) {
-                stdout = new WebSocket("ws://localhost:4013/shell/{{ .team.Id }}/{{ .image.Name }}/serverOutput");
+                stdout = new WebSocket("ws://localhost:4013/shell/{{ .team.ID }}/{{ .image.Name }}/serverOutput");
                 stdout.onopen = function(evt) {
                     printInfo("Opened stdout.");
                 }

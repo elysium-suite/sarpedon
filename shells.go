@@ -16,6 +16,7 @@ func refreshShell(teamID, imageName string, image *imageShell) {
 	fmt.Println("Refreshing shell!")
 	image.StdinRead, image.StdinWrite = io.Pipe()
 	image.StdoutRead, image.StdoutWrite = io.Pipe()
+	image.Active = false
 	sarpShells[teamID] = make(map[string]*imageShell)
 	sarpShells[teamID][imageName] = image
 }
@@ -86,11 +87,13 @@ func shellServerOutput(c *gin.Context) {
 	timeOfCreation := time.Now()
 	if err != nil {
 		errorOut(c, err)
+		image.Active = false
 		return
 	}
 	cn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		fmt.Print("upgrade:", err)
+		image.Active = false
 		return
 	}
 	defer cn.Close()
@@ -130,11 +133,13 @@ func shellClientInput(c *gin.Context) {
 	image, err := initShell(c)
 	if err != nil {
 		errorOut(c, err)
+		image.Active = false
 		return
 	}
 	cn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		fmt.Print("upgrade:", err)
+		image.Active = false
 		return
 	}
 	defer cn.Close()
@@ -163,11 +168,13 @@ func shellClientOutput(c *gin.Context) {
 	image, err := initShell(c)
 	if err != nil {
 		errorOut(c, err)
+		image.Active = false
 		return
 	}
 	cn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		fmt.Print("upgrade:", err)
+		image.Active = false
 		return
 	}
 	defer cn.Close()
@@ -179,11 +186,13 @@ func shellClientOutput(c *gin.Context) {
 		_, message, err := cn.ReadMessage()
 		if err != nil {
 			fmt.Println("read 3:", err)
+			image.Active = false
 			if !prevError {
 				teamID := c.Param("id")
 				imageName := c.Param("image")
 				fmt.Println("REFRESHING DUE TO READ ERROR!")
 				refreshShell(teamID, imageName, image)
+				image.Active = true
 				prevError = true
 				continue
 			}
