@@ -26,13 +26,12 @@ type scoreEntry struct {
 	Team           teamData      `json:"team,omitempty"`
 	Image          imageData     `json:"image,omitempty"`
 	Vulns          vulnWrapper   `json:"vulns,omitempty"`
-	Debug          string        `json:"debug,omitempty"`
 	Points         int           `json:"points,omitempty"`
 	Penalties      int           `json:"penalties,omitempty"`
 	PlayTime       time.Duration `json:"playtime,omitempty"`
 	PlayTimeStr    string        `json:"playtimestr,omitempty"`
 	ElapsedTime    time.Duration `json:"elapsedtime,omitempty"`
-	ElapsedTimeStr string        `json:"playtimestr,omitempty"`
+	ElapsedTimeStr string        `json:"elapsedtimestr,omitempty"`
 }
 
 type vulnWrapper struct {
@@ -115,18 +114,24 @@ func getAll(teamName, imageName string) []scoreEntry {
 	teamObj := getTeam(teamName)
 	findOptions := options.Find()
 	findOptions.SetSort(bson.D{{"time", 1}})
+	mod := mongo.IndexModel{
+		Keys: bson.M{
+			"time": -1,
+		}, Options: nil,
+	}
+	_, err := coll.Indexes().CreateOne(context.TODO(), mod)
+	if err != nil {
+		panic(err)
+	}
 
 	var cursor *mongo.Cursor
-	var err error
 
 	if imageName != "" {
-		fmt.Println("image specificed, searching for all records ")
-		cursor, err = coll.Find(context.TODO(), bson.D{{"team.id", teamObj.ID}, {"image", getImage(imageName)}}, findOptions)
+		cursor, err = coll.Find(context.TODO(), bson.D{{"_id", 1}, {"team.id", teamObj.ID}, {"image", getImage(imageName)}}, findOptions)
 		if err != nil {
 			panic(err)
 		}
 	} else {
-		fmt.Println("No image, searching ", teamObj.ID, imageName)
 		cursor, err = coll.Find(context.TODO(), bson.D{{"team.id", teamObj.ID}}, findOptions)
 		if err != nil {
 			panic(err)
@@ -136,8 +141,6 @@ func getAll(teamName, imageName string) []scoreEntry {
 	if err := cursor.All(mongoCtx, &scores); err != nil {
 		panic(err)
 	}
-
-	// fmt.Println("all score results", scores)
 	return scores
 }
 
@@ -205,9 +208,6 @@ func getScores() ([]scoreEntry, error) {
 			{"vulns", bson.D{
 				{"$last", "$vulns"},
 			}},
-			{"debug", bson.D{
-				{"$last", "$debug"},
-			}},
 		}},
 	}
 
@@ -222,7 +222,6 @@ func getScores() ([]scoreEntry, error) {
 			{"playtimestr", "$playtimestr"},
 			{"elapsedtimestr", "$elapsedtimestr"},
 			{"vulns", "$vulns"},
-			{"debug", "$debug"},
 		}},
 	}
 

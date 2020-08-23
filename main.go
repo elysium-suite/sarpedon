@@ -111,7 +111,6 @@ func viewTeam(c *gin.Context) {
 		return
 	}
 	teamScore := getScore(teamName, "")
-	fmt.Println("teamscore", teamScore)
 	if len(teamScore) <= 0 {
 		errorOutGraceful(c, errors.New("Team doesn't have any image data"))
 		return

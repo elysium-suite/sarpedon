@@ -189,7 +189,7 @@ pre {
         {{ if $image.Records }}
             <div class="imgheader">
                 <h4 style="display:inline-block" id="info{{ $index }}">{{ $image.Name }}</h4>
-                <a href="/shell/{{ $team.Id }}/{{ $image.Name }}"><input type="submit" value="🐚"/></a>
+                <a href="/shell/{{ $team.ID }}/{{ $image.Name }}"><input type="submit" value="🐚"/></a>
             </div>
             {{ $selected := index $image.Records $image.Index }}
             <form action="#info{{ $index }}">
@@ -221,13 +221,6 @@ pre {
                 </tbody>
             </table>
             <br></br>
-            <h4>Debug Output</h4>
-            <br>
-            <pre>
-{{ $selected.Debug }}
-            </pre>
-            <br>
-            <br>
         {{ end }}
     {{ end }}
 {{ end }}
