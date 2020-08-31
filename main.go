@@ -169,13 +169,35 @@ func viewTeamImage(c *gin.Context) {
 		errorOutGraceful(c, errors.New("Team doesn't have any image data"))
 		return
 	}
+	for index, score := range teamScore {
+		for _, vuln := range score.Vulns.VulnItems {
+			if vuln.VulnPoints < 0 {
+				teamScore[index].Penalties++
+			}
+		}
+	}
 	teamData, err := parseScoresIntoTeam(teamScore)
 	if err != nil {
-		errorOut(c, errors.New("Parsing team scores failed"))
+		errorOutGraceful(c, errors.New("Parsing team scores failed"))
 		return
 	}
-	images, labels := consolidateRecords(getAll(teamName, imageName), []imageData{getImage(imageName)})
-	c.HTML(http.StatusOK, "detail.html", pageData(c, "Scoreboard for "+teamName+"'s "+imageName, gin.H{"data": teamScore, "team": teamData, "imageFilter": getImage(imageName), "labels": labels, "images": images}))
+	allRecords := getAll(teamName, "")
+	images, labels := consolidateRecords(allRecords, []imageData{getImage(imageName)})
+	for index := range images {
+		recordIndex := c.Request.URL.Query().Get("record" + strconv.Itoa(index))
+		if recordIndex != "" {
+			images[index].Index, err = strconv.Atoi(recordIndex)
+			if err != nil {
+				errorOutGraceful(c, errors.New("Invalid record number given"))
+				return
+			}
+		} else {
+			images[index].Index = len(images[index].Records) - 1
+		}
+	}
+
+	c.HTML(http.StatusOK, "detail.html", pageData(c, "Scoreboard for "+teamName, gin.H{"data": teamScore, "team": teamData, "labels": labels, "images": images, "imageFilter": getImage(imageName)}))
+
 }
 
 func getStatus(c *gin.Context) {
