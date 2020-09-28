@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"html/template"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,6 +24,10 @@ func init() {
 	flag.Parse()
 }
 
+func increment(num int) int {
+	return num + 1;
+}
+
 func main() {
 	readConfig(&sarpConfig)
 	checkConfig()
@@ -30,6 +35,12 @@ func main() {
 	// Initialize Gin router
 	// gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
+
+	//Add Increment Function to Router
+	r.SetFuncMap(template.FuncMap{
+		"increment": increment,
+	})
+
 	r.LoadHTMLGlob("templates/*")
 	r.Static("/assets", "./assets")
 	initCookies(r)
