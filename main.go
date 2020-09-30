@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 	"html/template"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,10 +23,6 @@ func init() {
 	flag.Parse()
 }
 
-func increment(num int) int {
-	return num + 1;
-}
-
 func main() {
 	readConfig(&sarpConfig)
 	checkConfig()
@@ -38,7 +33,9 @@ func main() {
 
 	//Add Increment Function to Router
 	r.SetFuncMap(template.FuncMap{
-		"increment": increment,
+		"increment": func (num int) int {
+			return num + 1;
+		},
 	})
 
 	r.LoadHTMLGlob("templates/*")
