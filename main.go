@@ -4,10 +4,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strconv"
 	"time"
-	"html/template"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,10 +32,10 @@ func main() {
 	// gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
-	//Add Increment Function to Router
+	// Add Increment Function to Router
 	r.SetFuncMap(template.FuncMap{
-		"increment": func (num int) int {
-			return num + 1;
+		"increment": func(num int) int {
+			return num + 1
 		},
 	})
 
@@ -205,7 +206,6 @@ func viewTeamImage(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "detail.html", pageData(c, "Scoreboard for "+teamName, gin.H{"data": teamScore, "team": teamData, "labels": labels, "images": images, "imageFilter": getImage(imageName)}))
-
 }
 
 func getStatus(c *gin.Context) {
