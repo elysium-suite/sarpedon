@@ -48,6 +48,7 @@
     <br>
     <table class="table table-borderless table-dark table-hover scoreboard">
             <thead class="thead-dark">
+                <th>Rank</th>
                 <th>Team</th>
                 {{ if not $imageFilter }}
                 <th>Image(s)</th>
@@ -56,7 +57,7 @@
                 <th>Score</th>
             </thead>
             <tbody>
-                {{ range $team := .scores }}
+                {{ range $team_rank, $team := .scores }}
                 {{ $linktext := "" }}
                 {{ if $imageFilter }}
                     {{ $linktext = (print "/team/" $team.Alias "/image/" $imageFilter.Name) }}
@@ -64,6 +65,11 @@
                     {{ $linktext = (print "/team/" $team.Alias) }}
                 {{ end }}
                 <tr>
+                    <td>
+                      <a href="{{ $linktext }}">
+                          {{ $team_rank | increment }}
+                      </a>
+                    </td>
                     <td>
                         <a href="{{ $linktext }}">
                             {{ $team.Alias }}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strconv"
 	"time"
@@ -30,6 +31,14 @@ func main() {
 	// Initialize Gin router
 	// gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
+
+	// Add Increment Function to Router
+	r.SetFuncMap(template.FuncMap{
+		"increment": func(num int) int {
+			return num + 1
+		},
+	})
+
 	r.LoadHTMLGlob("templates/*")
 	r.Static("/assets", "./assets")
 	initCookies(r)
@@ -197,7 +206,6 @@ func viewTeamImage(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "detail.html", pageData(c, "Scoreboard for "+teamName, gin.H{"data": teamScore, "team": teamData, "labels": labels, "images": images, "imageFilter": getImage(imageName)}))
-
 }
 
 func getStatus(c *gin.Context) {
