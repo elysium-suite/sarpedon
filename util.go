@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -99,6 +100,9 @@ func consolidateRecords(allRecords []scoreEntry, images []imageData) ([]imageDat
 	imageRecords := []time.Time{}
 
 	timeStr := "2006-01-02 15:04"
+	timeBegin := time.Unix(28800, 0)
+	fmt.Println(allRecords)
+
 	if len(allRecords) <= 0 {
 		return images, []string{}
 	}
@@ -108,7 +112,12 @@ func consolidateRecords(allRecords []scoreEntry, images []imageData) ([]imageDat
 
 		for _, record := range allRecords {
 			if record.Image.Name == image.Name {
-				record.Time = record.Time.Round(time.Minute)
+				record.PlayTime = record.PlayTime.Round(time.Minute)
+
+				tempTimeStr := formatTime(record.PlayTime.Round(time.Minute))
+				record.PlayTimeStr = tempTimeStr[0 : len(tempTimeStr)-3]
+				fmt.Println(record.PlayTimeStr)
+
 				if currentRecord.Time.IsZero() {
 					// fmt.Println("======= setting time ======", record.Time)
 					currentRecord = record
@@ -117,7 +126,7 @@ func consolidateRecords(allRecords []scoreEntry, images []imageData) ([]imageDat
 				if record.Time.Format(timeStr) != currentRecord.Time.Format(timeStr) {
 					// fmt.Println("ADDING new image record, lol:", currentRecord.Time, "versus new", record.Time)
 					images[i].Records = append(images[i].Records, currentRecord)
-					imageRecords = append(imageRecords, currentRecord.Time)
+					imageRecords = append(imageRecords, timeBegin.Add(currentRecord.PlayTime))
 				}
 				currentRecord = record
 			}
@@ -126,7 +135,7 @@ func consolidateRecords(allRecords []scoreEntry, images []imageData) ([]imageDat
 		if !currentRecord.Time.IsZero() {
 			// fmt.Println("ADDING new image record, lol:", currentRecord.Time)
 			images[i].Records = append(images[i].Records, currentRecord)
-			imageRecords = append(imageRecords, currentRecord.Time)
+			imageRecords = append(imageRecords, timeBegin.Add(currentRecord.PlayTime))
 		}
 	}
 
@@ -139,17 +148,30 @@ func consolidateRecords(allRecords []scoreEntry, images []imageData) ([]imageDat
 	}
 
 	labels := generateLabels(imageRecords[0], imageRecords[len(imageRecords)-1])
-	// fmt.Println("final labels", labels)
 	return images, labels
 }
 
 func generateLabels(firstTime, lastTime time.Time) []string {
-	timeStr := "2006-01-02 15:04"
 	timeDiff := lastTime.Sub(firstTime).Round(time.Minute)
 	labels := []string{}
-	fmt.Println("FIRSTITME", firstTime, "LASTTIME", lastTime)
+
 	for t, _ := time.ParseDuration("0s"); t <= timeDiff; t += time.Minute {
-		labels = append(labels, firstTime.Add(t).Format(timeStr))
+		timeSince := timeDiff - lastTime.Sub(firstTime.Add(t))
+
+		hours, minutes := "", ""
+		if int(timeSince.Hours()) < 10 {
+			hours = "0" + strconv.Itoa(int(timeSince.Hours()))
+		} else {
+			hours = strconv.Itoa(int(timeSince.Hours()))
+		}
+
+		if int(timeSince.Minutes())%60 < 10 {
+			minutes = "0" + strconv.Itoa(int(timeSince.Minutes())%60)
+		} else {
+			minutes = strconv.Itoa(int(timeSince.Minutes()) % 60)
+		}
+
+		labels = append(labels, hours+":"+minutes)
 	}
 	return labels
 }

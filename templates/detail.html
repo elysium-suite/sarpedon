@@ -1,7 +1,7 @@
 {{ template "head.html" . }}
 {{ template "nav.html" . }}
 
-<script src="/assets/charts.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.3.1/dist/chart.min.js"></script>
 <style>
 
 form {
@@ -114,7 +114,7 @@ pre {
 {{ $images := .images }}
 
 <!-- Graph of scores over time -->
-<br><br><h4>Scores Over Time</h4><br>
+<br><br><h4>Scores Over Time (Play Time vs Points)</h4><br>
 <noscript>
     <p style="color: white; text-align: center">The score graph uses Chart.js, and thus doesn't function without JavaScript.</p>
 </noscript>
@@ -140,36 +140,13 @@ pre {
                 data: [
                 {{ range $index2, $record := $image.Records }}
                 {{ if $index2 }},{{end}}
-                    {x: '{{ $record.Time.Format "2006-01-02 15:04" }}', y: {{ $record.Points }} }
+                    {x: '{{ $record.PlayTimeStr }}', y: {{ $record.Points }} }
                 {{ end }} ],
                 fill: false,
+                tension: 0.1
             }
             {{ end }}
             ]
-        },
-        options: {
-            responsive: true,
-            elements : {
-                line: {
-                    tension: 0
-                }
-            },
-            scales: {
-                xAxes: [{
-                    ticks: {
-                        maxRotation: 0,
-                        minRotation: 0
-                    }
-                }],
-                yAxes: [{
-                    ticks: {
-                        beginAtZero: true,
-                        suggestedMax: 100,
-                        maxTicksLimit: 5,
-                        stepSize: 1
-                    }
-                }]
-            }
         }
     };
 
