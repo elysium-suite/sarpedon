@@ -1,20 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <!-- Metadata and resources
     –––––––––––––––––––––––––––––––––––––––––––––––––– -->
     <title>{{ .event }} {{ .title }}</title>
-    <meta name="title" content="{{ .event }} {{ .title }}">
-    <meta property="image" content="/assets/favicon.ico">
-    <meta property="og:image" content="/assets/favicon.ico">
-    <meta property="og:image:type" content="image/png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="1200">
-    <link rel="stylesheet" href="/assets/normalize.css">
-    <link rel="stylesheet" href="/assets/bootstrap.css">
-    <link rel="stylesheet" href="/assets/main.css">
-    <link rel="icon" type="image/ico" href="/assets/favicon.ico"/>
-</head>
+    <meta charset="utf-8" />
+    <meta
+      name="description"
+      content="{{ .event }} {{ .title }}"
+    />
+    <meta property="og:description" content="{{ .event }} {{ .title }}" />
+    <meta property="og:url" content="https://aaditgupta.tech" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="{{ .event }} {{ .title }}" />
+    <meta property="og:site_name" content="{{ .event }} {{ .title }}" />
+    <meta property="og:image" content="/favicon.png" />
+    <meta property="og:image:alt" content="/favicon.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="1200" />
+    <meta property="og:locale" content="en_US" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <link rel="apple-touch-startup-image" href="/favicon.png" />
+    <meta name="apple-mobile-web-app-title" content="{{ .event }} {{ .title }}" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="image" content="/favicon.png" />
+    <link rel="icon" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#212529" />
+    <meta name="title" content="{{ .event }} {{ .title }}" />
+    <link rel="stylesheet" href="/assets/normalize.css" />
+    <link rel="stylesheet" href="/assets/bootstrap.css" />
+    <link rel="stylesheet" href="/assets/main.css" />
+    <link rel="icon" type="image/ico" href="/assets/favicon.ico" />
+  </head>
 
-<body>
-    <div class="container">
+  <body>
+    <div class="container"></div>
+  </body>
+</html>
