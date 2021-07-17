@@ -23,6 +23,8 @@ Example configuration (`sarpedon.conf`):
 event = "My Event" # Event name
 password = "s3cr3tP4ssw0rd" # Needed for scoring request encryption
 playtime = "6h" # PlayTime limit in format https://godoc.org/time#ParseDuration
+timezone = "America/Los_Angeles" # Required for all timestamp conversions, in format https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+discordhook = "https://discord.com/api/webhooks/webhook_id/webhook_token" # Optional, for posting image completions to Discord
 
 [[admin]] # Admin account to view vulnerabilities scored
 username = "admin"

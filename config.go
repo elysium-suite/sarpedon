@@ -9,12 +9,14 @@ import (
 )
 
 type config struct {
-	Event    string
-	Password string
-	PlayTime string
-	Admin    []adminData
-	Image    []imageData
-	Team     []teamData
+	Event       string
+	Password    string
+	PlayTime    string
+	Timezone    string
+	DiscordHook string
+	Admin       []adminData
+	Image       []imageData
+	Team        []teamData
 }
 
 func readConfig(conf *config) {
@@ -36,6 +38,9 @@ func checkConfig() {
 	}
 	if sarpConfig.Image == nil {
 		log.Fatalln("No images provided!")
+	}
+	if sarpConfig.Timezone == "" {
+		log.Fatalln("No timezone provided!")
 	}
 	if sarpConfig.PlayTime != "" {
 		if _, err := time.ParseDuration(sarpConfig.PlayTime); err != nil {

@@ -75,6 +75,10 @@ table.table {
   text-align: center;
 }
 
+table.imageTable {
+  width: 95%;
+}
+
 td {
   cursor: pointer;
 }
