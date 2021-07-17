@@ -115,14 +115,14 @@ func calcCompletionTime(newEntry, lastEntry *scoreEntry) error {
 			}
 
 			if first {
-				annoucementName := "First Perfect Score on " + newEntry.Image.Name
-				annoucementBody := "Congratulations to " + newEntry.Team.Alias + " for the first perfect score on " + newEntry.Image.Name + "!"
-				err := insertAnnoucement(&announcement{time.Now(), annoucementName, annoucementBody})
+				announcementName := "First Perfect Score on " + newEntry.Image.Name
+				announcementBody := "Congratulations to " + newEntry.Team.Alias + " for the first perfect score on " + newEntry.Image.Name + "!"
+				err := insertAnnouncement(&announcement{time.Now(), announcementName, announcementBody})
 				if err != nil {
-					fmt.Println("Error inserting new annoucement", err)
+					fmt.Println("Error inserting new announcement", err)
 				}
 
-				postToDiscord(annoucementBody)
+				postToDiscord(announcementBody)
 
 				newCompletion := &completion{
 					ImageName: newEntry.Image.Name,

@@ -374,21 +374,21 @@ func getCompletion(imageName string) (bool, error) {
 	return false, err
 }
 
-func insertAnnoucement(newAnnoucement *announcement) error {
+func insertAnnouncement(newAnnouncement *announcement) error {
 	initDatabase()
-	coll := mongoClient.Database(dbName).Collection("annoucements")
-	_, err := coll.InsertOne(context.TODO(), newAnnoucement)
+	coll := mongoClient.Database(dbName).Collection("announcements")
+	_, err := coll.InsertOne(context.TODO(), newAnnouncement)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func getAnnoucements() ([]announcement, error) {
+func getAnnouncements() ([]announcement, error) {
 	initDatabase()
 	var result []announcement
 
-	coll := mongoClient.Database(dbName).Collection("annoucements")
+	coll := mongoClient.Database(dbName).Collection("announcements")
 	cur, err := coll.Find(context.TODO(), bson.D{})
 	if err != nil {
 		return nil, err
