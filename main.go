@@ -272,12 +272,12 @@ func viewSettings(c *gin.Context) {
 }
 
 func viewAnnounce(c *gin.Context) {
-	allAnnoucements, err := getAnnoucements()
+	allAnnouncements, err := getAnnouncements()
 	if err != nil {
-		allAnnoucements = []announcement{}
-		fmt.Println("Error retrieving annoucements", err)
+		allAnnouncements = []announcement{}
+		fmt.Println("Error retrieving announcements", err)
 	}
-	c.HTML(http.StatusOK, "announce.html", pageData(c, "announcements", gin.H{"announcements": allAnnoucements}))
+	c.HTML(http.StatusOK, "announce.html", pageData(c, "announcements", gin.H{"announcements": allAnnouncements}))
 }
 
 func scoreUpdate(c *gin.Context) {
@@ -302,7 +302,7 @@ func changeSettings(c *gin.Context) {
 	announceTitle := c.Request.Form.Get("title")
 	announceBody := c.Request.Form.Get("body")
 	loc, _ := time.LoadLocation(sarpConfig.Timezone)
-	insertAnnoucement(&announcement{time.Now().In(loc), announceTitle, announceBody})
+	insertAnnouncement(&announcement{time.Now().In(loc), announceTitle, announceBody})
 	c.HTML(http.StatusOK, "settings.html", pageData(c, "settings", nil))
 }
 
