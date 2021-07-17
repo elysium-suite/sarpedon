@@ -5,9 +5,12 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/DisgoOrg/disgohook"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 func errorOut(c *gin.Context, err error) {
@@ -96,12 +99,76 @@ func calcElapsedTime(newEntry, lastEntry *scoreEntry) error {
 	return nil
 }
 
+func calcCompletionTime(newEntry, lastEntry *scoreEntry) error {
+	var completionTime time.Time
+	if newEntry.Vulns.VulnsScored >= newEntry.Vulns.VulnsTotal {
+		if !lastEntry.CompletionTime.IsZero() {
+			completionTime = lastEntry.CompletionTime
+		} else {
+			loc, _ := time.LoadLocation(sarpConfig.Timezone)
+			completionTime = time.Now().In(loc)
+
+			first, err := getCompletion(newEntry.Image.Name)
+			if err != nil {
+				fmt.Println("Error retrieving completion", err)
+				return err
+			}
+
+			if first {
+				annoucementName := "First Perfect Score on " + newEntry.Image.Name
+				annoucementBody := "Congratulations to " + newEntry.Team.Alias + " for the first perfect score on " + newEntry.Image.Name + "!"
+				err := insertAnnoucement(&announcement{time.Now(), annoucementName, annoucementBody})
+				if err != nil {
+					fmt.Println("Error inserting new annoucement", err)
+				}
+
+				postToDiscord(annoucementBody)
+
+				newCompletion := &completion{
+					ImageName: newEntry.Image.Name,
+					TeamID:    newEntry.Team.ID,
+					Alias:     newEntry.Team.Alias,
+				}
+
+				err = insertCompletion(newCompletion)
+				if err != nil {
+					fmt.Println("Error inserting new completion", err)
+					return err
+				}
+			}
+		}
+	} else {
+		completionTime = time.Time{}
+	}
+	newEntry.CompletionTime = completionTime
+
+	return nil
+}
+
+func postToDiscord(data string) {
+	if sarpConfig.DiscordHook == "" {
+		return
+	}
+
+	logger := logrus.New()
+	logger.SetLevel(logrus.WarnLevel)
+
+	webhook, err := disgohook.NewWebhookClientByToken(nil, logger, strings.Split(sarpConfig.DiscordHook, "webhooks/")[1])
+	if err != nil {
+		fmt.Println("Failed to initialize webhook", err)
+	}
+
+	_, err = webhook.SendContent(data)
+	if err != nil {
+		fmt.Println("Failed to send message to webhook", err)
+	}
+}
+
 func consolidateRecords(allRecords []scoreEntry, images []imageData) ([]imageData, []string) {
 	imageRecords := []time.Time{}
 
 	timeStr := "2006-01-02 15:04"
 	timeBegin := time.Unix(28800, 0)
-	fmt.Println(allRecords)
 
 	if len(allRecords) <= 0 {
 		return images, []string{}
@@ -116,7 +183,6 @@ func consolidateRecords(allRecords []scoreEntry, images []imageData) ([]imageDat
 
 				tempTimeStr := formatTime(record.PlayTime.Round(time.Minute))
 				record.PlayTimeStr = tempTimeStr[0 : len(tempTimeStr)-3]
-				fmt.Println(record.PlayTimeStr)
 
 				if currentRecord.Time.IsZero() {
 					// fmt.Println("======= setting time ======", record.Time)

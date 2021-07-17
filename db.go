@@ -32,6 +32,7 @@ type scoreEntry struct {
 	PlayTimeStr    string        `json:"playtimestr,omitempty"`
 	ElapsedTime    time.Duration `json:"elapsedtime,omitempty"`
 	ElapsedTimeStr string        `json:"elapsedtimestr,omitempty"`
+	CompletionTime time.Time     `json:"completiontime,omitempty"`
 }
 
 type vulnWrapper struct {
@@ -74,6 +75,12 @@ type announcement struct {
 	Time  time.Time
 	Title string
 	Body  string
+}
+
+type completion struct {
+	ImageName string
+	TeamID    string
+	Alias     string
 }
 
 func initDatabase() {
@@ -205,6 +212,9 @@ func getScores() ([]scoreEntry, error) {
 			{"elapsedtimestr", bson.D{
 				{"$last", "$elapsedtimestr"},
 			}},
+			{"completiontime", bson.D{
+				{"$last", "$completiontime"},
+			}},
 			{"vulns", bson.D{
 				{"$last", "$vulns"},
 			}},
@@ -221,6 +231,7 @@ func getScores() ([]scoreEntry, error) {
 			{"elapsedtime", "$elapsedtime"},
 			{"playtimestr", "$playtimestr"},
 			{"elapsedtimestr", "$elapsedtimestr"},
+			{"completiontime", "$completiontime"},
 			{"vulns", "$vulns"},
 		}},
 	}
@@ -334,4 +345,66 @@ func getLastScore(newEntry *scoreEntry) (scoreEntry, error) {
 		fmt.Println("error finding last score:", err)
 	}
 	return score, err
+}
+
+func insertCompletion(completionRecord *completion) error {
+	initDatabase()
+	coll := mongoClient.Database(dbName).Collection("completion")
+	_, err := coll.InsertOne(context.TODO(), completionRecord)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getCompletion(imageName string) (bool, error) {
+	initDatabase()
+	var result bson.M
+
+	coll := mongoClient.Database(dbName).Collection("completion")
+	err := coll.FindOne(context.TODO(), bson.D{{"imagename", imageName}}).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return true, nil
+		} else {
+			fmt.Println("Error finding finding image completion:", err)
+		}
+	}
+
+	return false, err
+}
+
+func insertAnnoucement(newAnnoucement *announcement) error {
+	initDatabase()
+	coll := mongoClient.Database(dbName).Collection("annoucements")
+	_, err := coll.InsertOne(context.TODO(), newAnnoucement)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getAnnoucements() ([]announcement, error) {
+	initDatabase()
+	var result []announcement
+
+	coll := mongoClient.Database(dbName).Collection("annoucements")
+	cur, err := coll.Find(context.TODO(), bson.D{})
+	if err != nil {
+		return nil, err
+	}
+
+	for cur.Next(context.TODO()) {
+		var element announcement
+		err2 := cur.Decode(&element)
+		if err2 != nil {
+			return nil, err
+		}
+
+		loc, _ := time.LoadLocation(sarpConfig.Timezone)
+		element.Time = element.Time.In(loc)
+		result = append(result, element)
+	}
+
+	return result, err
 }

@@ -52,8 +52,10 @@ func parseUpdate(cryptUpdate string) (scoreEntry, error) {
 	if err != nil {
 		lastRecord = scoreEntry{}
 	}
+
 	calcPlayTime(&newEntry, &lastRecord)
 	calcElapsedTime(&newEntry, &lastRecord)
+	calcCompletionTime(&newEntry, &lastRecord)
 	newEntry.PlayTimeStr = formatTime(newEntry.PlayTime)
 	newEntry.ElapsedTimeStr = formatTime(newEntry.ElapsedTime)
 	replaceScore(&newEntry)

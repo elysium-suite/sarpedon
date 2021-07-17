@@ -57,13 +57,14 @@ pre {
 
 <!-- Current image scores -->
 <br><h4>Current Image Scores</h4><br>
-<table class="table table-borderless table-dark table-striped scoreboard">
+<table class="table imageTable table-borderless table-dark table-striped scoreboard">
     <thead class="thead-dark">
         <th>Image</th>
         <th>Play Time</th>
         <th>Elapsed Time</th>
+        <th>Last Update</th>
+        <th>First Completion Time</th>
         <th>Found Vulns</th>
-        <th>Total Vulns</th>
         <th>Penalties</th>
         <th>Points</th>
     </thead>
@@ -87,12 +88,21 @@ pre {
             </td>
             <td>
                 <a href="/team/{{ $team.Alias }}/image/{{ $score.Image.Name }}">
-                {{ $score.Vulns.VulnsScored}}
+                {{ $score.Time.Format "2006-01-02 15:04:05" }}
                 </a>
             </td>
             <td>
                 <a href="/team/{{ $team.Alias }}/image/{{ $score.Image.Name }}">
-                {{ $score.Vulns.VulnsTotal}}
+                {{ if eq ($score.CompletionTime.Format "2006-01-02 15:04:05") "0001-01-01 00:00:00"}}
+                    Image Not Completed
+                {{ else }}
+                    {{ $score.CompletionTime.Format "2006-01-02 15:04:05" }}
+                {{ end }}
+                </a>
+            </td>
+            <td>
+                <a href="/team/{{ $team.Alias }}/image/{{ $score.Image.Name }}">
+                {{ $score.Vulns.VulnsScored}} / {{ $score.Vulns.VulnsTotal}}
                 </a>
             </td>
             <td>
@@ -197,7 +207,7 @@ pre {
                     {{ end }}
                 </tbody>
             </table>
-            <br></br>
+            <br>
         {{ end }}
     {{ end }}
 {{ end }}

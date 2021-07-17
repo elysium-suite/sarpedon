@@ -13,10 +13,9 @@ import (
 )
 
 var (
-	sarpConfig        = config{}
-	sarpAnnouncements = []announcement{}
-	sarpShells        = make(map[string]map[string]*imageShell)
-	debugEnabled      = false
+	sarpConfig   = config{}
+	sarpShells   = make(map[string]map[string]*imageShell)
+	debugEnabled = false
 )
 
 func init() {
@@ -155,6 +154,19 @@ func viewTeam(c *gin.Context) {
 		}
 	}
 
+	loc, _ := time.LoadLocation(sarpConfig.Timezone)
+	for index, score := range teamScore {
+		teamScore[index].Time = score.Time.In(loc)
+		if teamScore[index].CompletionTime != (time.Time{}) {
+			teamScore[index].CompletionTime = score.CompletionTime.In(loc)
+		}
+	}
+	for index := range images {
+		for index2, record := range images[index].Records {
+			images[index].Records[index2].Time = record.Time.In(loc)
+		}
+	}
+
 	c.HTML(http.StatusOK, "detail.html", pageData(c, "Scoreboard for "+teamName, gin.H{"data": teamScore, "team": teamData, "labels": labels, "images": images}))
 }
 
@@ -260,8 +272,12 @@ func viewSettings(c *gin.Context) {
 }
 
 func viewAnnounce(c *gin.Context) {
-	fmt.Println("sarpannoucmenetsi s", sarpAnnouncements)
-	c.HTML(http.StatusOK, "announce.html", pageData(c, "announcements", gin.H{"announcements": sarpAnnouncements}))
+	allAnnoucements, err := getAnnoucements()
+	if err != nil {
+		allAnnoucements = []announcement{}
+		fmt.Println("Error retrieving annoucements", err)
+	}
+	c.HTML(http.StatusOK, "announce.html", pageData(c, "announcements", gin.H{"announcements": allAnnoucements}))
 }
 
 func scoreUpdate(c *gin.Context) {
@@ -285,7 +301,8 @@ func changeSettings(c *gin.Context) {
 	c.Request.ParseForm()
 	announceTitle := c.Request.Form.Get("title")
 	announceBody := c.Request.Form.Get("body")
-	sarpAnnouncements = append([]announcement{{time.Now(), announceTitle, announceBody}}, sarpAnnouncements...)
+	loc, _ := time.LoadLocation(sarpConfig.Timezone)
+	insertAnnoucement(&announcement{time.Now().In(loc), announceTitle, announceBody})
 	c.HTML(http.StatusOK, "settings.html", pageData(c, "settings", nil))
 }
 
