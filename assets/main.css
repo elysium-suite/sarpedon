@@ -83,6 +83,26 @@ td {
   cursor: pointer;
 }
 
+hr {
+  border: 0;
+  height: 1px;
+  background: #333;
+  background-image: linear-gradient(to right, #212529, #fff, #212529);
+
+  margin-top: 2.5rem;
+  margin-bottom: 2.5rem;
+  margin-left: auto;
+  margin-right: auto;
+
+  width: 70%;
+
+}
+
+.form-control {
+  width: 50%;
+  margin: auto;
+}
+
 .cmdinput {
   color: yellow;
 }
