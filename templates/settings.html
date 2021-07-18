@@ -4,25 +4,52 @@
 –––––––––––––––––––––––––––––––––––––––––––––––––– -->
 <div class="container">
     <h2>Settings</h2>
-    <br>
-    <h4>Make announcement</h4>
+    <center>
+        <hr>
+    </center>
+    <h4 style="margin-bottom: 1.6rem">Make announcement</h4>
     <form method="POST">
+        <input id="prodId" name="settingType" type="hidden" value="announcement">
         <div class="form-group">
-            <label for="announceTitle">Announcement Title</label>
-            <input name="title" type="text" class="form-control" id="announceTitle" placeholder="Everything is broken! Stop asking!" required>
+            <input name="title" type="text" class="form-control" id="announceTitle" placeholder="Announcement Title" required>
         </div>
         <div class="form-group">
-            <label for="announceBody">Announcement Body</label>
-            <textarea name="body" class="form-control" id="announceBody" rows="3" placeholder="Yes, that means you too." required></textarea>
+            <textarea name="body" class="form-control" id="announceBody" rows="3" placeholder="Announcement Body" required></textarea>
         </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <div style="text-align: center;">
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+    </form>
+
+    <center>
+        <hr>
+    </center>
+
+    <form method="POST" style="text-align: center;">
+        <input id="prodId" name="settingType" type="hidden" value="toggleScoring">
+
+        <h4>Toggle Scoring</h4>
+        <br>
+        {{ if .scoring }}
+            <button type="submit" class="btn btn-danger">Stop Scoring</button>
+        {{ else }}
+            <button type="submit" class="btn btn-primary">Start Scoring</button>
+        {{ end }}
+    </form>
+
+    <center>
+        <hr>
+    </center>
+
+    <form method="POST" style="text-align: center;">
+        <input id="prodId" name="settingType" type="hidden" value="wipeDatabase">
+
+        <h4>Wipe Database</h4>
+        <p>(Erases All Scores, Use With Caution)</p>
+        <br>
+        <button type="submit" class="btn btn-danger">Wipe Database</button>
     </form>
 </div>
-
-settings
-ideally have:
-- nuke database & reset everything
-- ignore requests
 <!-- End Document
 –––––––––––––––––––––––––––––––––––––––––––––––––– -->
 {{ template "feet.html" }}

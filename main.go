@@ -13,9 +13,10 @@ import (
 )
 
 var (
-	sarpConfig   = config{}
-	sarpShells   = make(map[string]map[string]*imageShell)
-	debugEnabled = false
+	sarpConfig      = config{}
+	sarpShells      = make(map[string]map[string]*imageShell)
+	debugEnabled    = false
+	acceptingScores = true
 )
 
 func init() {
@@ -268,7 +269,7 @@ func getShell(c *gin.Context) {
 }
 
 func viewSettings(c *gin.Context) {
-	c.HTML(http.StatusOK, "settings.html", pageData(c, "settings", nil))
+	c.HTML(http.StatusOK, "settings.html", pageData(c, "settings", gin.H{"scoring": acceptingScores}))
 }
 
 func viewAnnounce(c *gin.Context) {
@@ -281,6 +282,11 @@ func viewAnnounce(c *gin.Context) {
 }
 
 func scoreUpdate(c *gin.Context) {
+	if !acceptingScores {
+		c.JSON(200, gin.H{"status": "OK"})
+		return
+	}
+
 	c.Request.ParseForm()
 	cryptUpdate := c.Request.Form.Get("update")
 	newScore, err := parseUpdate(cryptUpdate)
@@ -288,22 +294,39 @@ func scoreUpdate(c *gin.Context) {
 		errorOut(c, err)
 		return
 	}
-	// fmt.Println("newscore is", newScore)
+
 	err = insertScore(newScore)
 	if err != nil {
 		errorOut(c, err)
 		return
 	}
+
 	c.JSON(200, gin.H{"status": "OK"})
 }
 
 func changeSettings(c *gin.Context) {
 	c.Request.ParseForm()
-	announceTitle := c.Request.Form.Get("title")
-	announceBody := c.Request.Form.Get("body")
-	loc, _ := time.LoadLocation(sarpConfig.Timezone)
-	insertAnnouncement(&announcement{time.Now().In(loc), announceTitle, announceBody})
-	c.HTML(http.StatusOK, "settings.html", pageData(c, "settings", nil))
+	settingType := c.Request.Form.Get("settingType")
+
+	if settingType == "announcement" {
+		announceTitle := c.Request.Form.Get("title")
+		announceBody := c.Request.Form.Get("body")
+		loc, _ := time.LoadLocation(sarpConfig.Timezone)
+		postToDiscord("**" + announceTitle + "**\n" + announceBody)
+		insertAnnouncement(&announcement{time.Now().In(loc), announceTitle, announceBody})
+
+	} else if settingType == "toggleScoring" {
+		acceptingScores = !acceptingScores
+
+	} else if settingType == "wipeDatabase" {
+		err := wipeDatabase()
+		if err != nil {
+			fmt.Println("Error wiping database", err)
+		}
+
+	}
+
+	c.HTML(http.StatusOK, "settings.html", pageData(c, "settings", gin.H{"scoring": acceptingScores}))
 }
 
 func pageData(c *gin.Context, title string, ginMap gin.H) gin.H {

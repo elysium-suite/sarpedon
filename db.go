@@ -408,3 +408,19 @@ func getAnnouncements() ([]announcement, error) {
 
 	return result, err
 }
+
+func wipeDatabase() error {
+	initDatabase()
+
+	collectionList, err := mongoClient.Database(dbName).ListCollectionNames(context.TODO(), bson.D{}, nil)
+	if err != nil {
+		return err
+	}
+
+	for _, collection := range collectionList {
+		coll := mongoClient.Database(dbName).Collection(collection)
+		coll.Drop(context.TODO())
+	}
+
+	return nil
+}
