@@ -13,10 +13,11 @@ import (
 )
 
 var (
-	sarpConfig      = config{}
-	sarpShells      = make(map[string]map[string]*imageShell)
-	debugEnabled    = false
-	acceptingScores = true
+	sarpConfig          = config{}
+	sarpShells          = make(map[string]map[string]*imageShell)
+	debugEnabled        = false
+	acceptingScores     = true
+	alternateCompletion = false
 )
 
 func init() {

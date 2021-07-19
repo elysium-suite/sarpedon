@@ -83,6 +83,12 @@ type completion struct {
 	Alias     string
 }
 
+type alternateData struct {
+	Name string
+	Data []string
+	Map  map[string]bool
+}
+
 func initDatabase() {
 	refresh := false
 

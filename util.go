@@ -108,6 +108,39 @@ func calcCompletionTime(newEntry, lastEntry *scoreEntry) error {
 			loc, _ := time.LoadLocation(sarpConfig.Timezone)
 			completionTime = time.Now().In(loc)
 
+			if alternateCompletion && sarpConfig.Alternate.Map[newEntry.Team.ID] {
+				first, err := getCompletion(newEntry.Image.Name + "-ALT")
+				if err != nil {
+					fmt.Println("Error retrieving completion", err)
+					return err
+				}
+
+				if first {
+					announcementName := "First " + sarpConfig.Alternate.Name + " Perfect Score on " + newEntry.Image.Name
+					announcementBody := "Congratulations to " + newEntry.Team.Alias + " for the first " + sarpConfig.Alternate.Name +
+						" perfect score on " + newEntry.Image.Name + "!"
+
+					err := insertAnnouncement(&announcement{time.Now(), announcementName, announcementBody})
+					if err != nil {
+						fmt.Println("Error inserting new announcement", err)
+					}
+
+					postToDiscord(announcementBody)
+
+					newCompletion := &completion{
+						ImageName: newEntry.Image.Name + "-ALT",
+						TeamID:    newEntry.Team.ID,
+						Alias:     newEntry.Team.Alias,
+					}
+
+					err = insertCompletion(newCompletion)
+					if err != nil {
+						fmt.Println("Error inserting new completion", err)
+						return err
+					}
+				}
+			}
+
 			first, err := getCompletion(newEntry.Image.Name)
 			if err != nil {
 				fmt.Println("Error retrieving completion", err)
