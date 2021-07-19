@@ -17,6 +17,7 @@ type config struct {
 	Admin       []adminData
 	Image       []imageData
 	Team        []teamData
+	Alternate   alternateData
 }
 
 func readConfig(conf *config) {
@@ -85,6 +86,14 @@ func checkConfig() {
 			if matches > 2 {
 				log.Fatalln("Duplicate team details found:", team, dupeTeam)
 			}
+		}
+	}
+
+	if alternateCompletion {
+		sarpConfig.Alternate.Map = make(map[string]bool)
+
+		for _, ID := range sarpConfig.Alternate.Data {
+			sarpConfig.Alternate.Map[ID] = true
 		}
 	}
 }
