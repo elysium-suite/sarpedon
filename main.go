@@ -284,7 +284,7 @@ func viewAnnounce(c *gin.Context) {
 
 func scoreUpdate(c *gin.Context) {
 	if !acceptingScores {
-		c.JSON(200, gin.H{"status": "OK"})
+		c.JSON(200, gin.H{"status": "DISABLED"})
 		return
 	}
 
