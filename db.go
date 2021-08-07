@@ -430,3 +430,27 @@ func wipeDatabase() error {
 
 	return nil
 }
+
+func clearTeamScore(teamID string) error {
+	initDatabase()
+
+	coll := mongoClient.Database(dbName).Collection("results")
+	delResult, err := coll.DeleteMany(context.TODO(), bson.D{{"team.id", teamID}})
+	if err != nil {
+		return err
+	}
+	if delResult.DeletedCount == 0 {
+		fmt.Println("No results were deleted")
+	}
+
+	coll = mongoClient.Database(dbName).Collection("scoreboard")
+	delResult, err = coll.DeleteMany(context.TODO(), bson.D{{"team.id", teamID}})
+	if err != nil {
+		return err
+	}
+	if delResult.DeletedCount == 0 {
+		fmt.Println("No results were deleted")
+	}
+
+	return nil
+}
