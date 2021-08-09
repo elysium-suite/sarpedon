@@ -440,7 +440,7 @@ func clearTeamScore(teamID string) error {
 		return err
 	}
 	if delResult.DeletedCount == 0 {
-		fmt.Println("No results were deleted")
+		fmt.Println("No result entries were deleted")
 	}
 
 	coll = mongoClient.Database(dbName).Collection("scoreboard")
@@ -449,7 +449,7 @@ func clearTeamScore(teamID string) error {
 		return err
 	}
 	if delResult.DeletedCount == 0 {
-		fmt.Println("No results were deleted")
+		fmt.Println("No scoreboard results were deleted")
 	}
 
 	return nil
