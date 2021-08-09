@@ -101,7 +101,7 @@ func calcElapsedTime(newEntry, lastEntry *scoreEntry) error {
 
 func calcCompletionTime(newEntry, lastEntry *scoreEntry) error {
 	var completionTime time.Time
-	if newEntry.Vulns.VulnsScored >= newEntry.Vulns.VulnsTotal {
+	if newEntry.Vulns.VulnsScored >= newEntry.Vulns.VulnsTotal && newEntry.Team.ID != "testing_id" {
 		if !lastEntry.CompletionTime.IsZero() {
 			completionTime = lastEntry.CompletionTime
 		} else {

@@ -325,6 +325,11 @@ func changeSettings(c *gin.Context) {
 			fmt.Println("Error wiping database", err)
 		}
 
+	} else if settingType == "disableTestingID" {
+		err := clearTeamScore("testing_id")
+		if err != nil {
+			fmt.Println("Error clearing testing_id results", err)
+		}
 	}
 
 	c.HTML(http.StatusOK, "settings.html", pageData(c, "settings", gin.H{"scoring": acceptingScores}))
