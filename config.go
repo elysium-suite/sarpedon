@@ -14,6 +14,7 @@ type config struct {
 	PlayTime    string
 	Timezone    string
 	DiscordHook string
+	Enforce     bool
 	Admin       []adminData
 	Image       []imageData
 	Team        []teamData

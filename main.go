@@ -7,14 +7,18 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 var (
+	imageStatus = struct {
+		sync.RWMutex
+		m map[string]map[string]gin.H
+	}{m: make(map[string]map[string]gin.H)}
 	sarpConfig          = config{}
-	sarpShells          = make(map[string]map[string]*imageShell)
 	debugEnabled        = false
 	acceptingScores     = true
 	alternateCompletion = false
@@ -58,8 +62,6 @@ func main() {
 		routes.GET("/team/:team", viewTeam)
 		routes.GET("/image/:image", viewImage)
 		routes.GET("/team/:team/image/:image", viewTeamImage)
-		routes.GET("/shell/:id/:image/clientInput", shellClientInput)
-		routes.GET("/shell/:id/:image/clientOutput", shellClientOutput)
 	}
 
 	authRoutes := routes.Group("/")
@@ -69,9 +71,6 @@ func main() {
 		authRoutes.GET("/settings", viewSettings)
 		authRoutes.POST("/settings", changeSettings)
 		authRoutes.GET("/export", exportCsv)
-		authRoutes.GET("/shell/:id/:image", getShell)
-		authRoutes.GET("/shell/:id/:image/serverInput", shellServerInput)
-		authRoutes.GET("/shell/:id/:image/serverOutput", shellServerOutput)
 	}
 
 	fmt.Println("Initializing scoreboard data...")
@@ -223,50 +222,39 @@ func viewTeamImage(c *gin.Context) {
 }
 
 func getStatus(c *gin.Context) {
-	image, err := initShell(c)
+	id, image, err := validateReq(c)
 	if err != nil {
 		errorOut(c, err)
 		return
 	}
-	if image.Waiting {
-		c.JSON(200, gin.H{"status": "GIMMESHELL"})
-		return
-	}
-	imageName := c.Param("image")
-	teamID := c.Param("id")
-	// Already checked for being a valid time on startup.
-	if sarpConfig.PlayTime != "" {
 
+	if sarpConfig.PlayTime != "" {
 		playTimeLimit, _ := time.ParseDuration(sarpConfig.PlayTime)
 		recentRecord, err := getLastScore(&scoreEntry{
-			Image: getImage(imageName),
-			Team:  getTeam(teamID),
+			Team:  getTeam(id),
+			Image: getImage(image),
 		})
-		if err == nil && recentRecord.PlayTime > playTimeLimit {
+		// Kill them if they're over play time limit
+		if err == nil && recentRecord.PlayTime > playTimeLimit && sarpConfig.Enforce {
 			c.JSON(200, gin.H{"status": "DIE"})
 			return
 		}
 	}
-	c.JSON(200, gin.H{"status": "OK"})
-}
 
-func getShell(c *gin.Context) {
-	image, err := initShell(c)
-	if err != nil {
-		errorOutGraceful(c, err)
+	if !acceptingScores {
+		c.JSON(400, gin.H{"status": "DISABLED"})
 		return
 	}
-	teamID := c.Param("id")
-	imageName := c.Param("image")
-	if image.Active == true {
-		c.HTML(http.StatusOK, "shell.html", pageData(c, "shell", gin.H{"team": getTeam(teamID), "image": getImage(imageName), "error": "Shell is currently in use!"}))
+
+	imageStatus.Lock()
+	defer imageStatus.Unlock()
+	if v, ok := imageStatus.m[id][image]; ok {
+		// Delete existing key
+		delete(imageStatus.m[id], image)
+		c.JSON(200, v)
 		return
 	}
-	refreshShell(teamID, imageName, image)
-	fmt.Println("*****************")
-	fmt.Println("IMAGE ACTIVE FOR", image, "is", image.Active)
-	fmt.Println("*****************")
-	c.HTML(http.StatusOK, "shell.html", pageData(c, "shell", gin.H{"team": getTeam(teamID), "image": getImage(imageName)}))
+	c.JSON(200, gin.H{"status": "OK"})
 }
 
 func viewSettings(c *gin.Context) {
@@ -284,7 +272,7 @@ func viewAnnounce(c *gin.Context) {
 
 func scoreUpdate(c *gin.Context) {
 	if !acceptingScores {
-		c.JSON(200, gin.H{"status": "DISABLED"})
+		c.JSON(400, gin.H{"status": "DISABLED"})
 		return
 	}
 
@@ -293,6 +281,7 @@ func scoreUpdate(c *gin.Context) {
 	newScore, err := parseUpdate(cryptUpdate)
 	if err != nil {
 		errorOut(c, err)
+		fmt.Println("Error decrypting update-- maybe your password is wrong?")
 		return
 	}
 
@@ -309,30 +298,34 @@ func changeSettings(c *gin.Context) {
 	c.Request.ParseForm()
 	settingType := c.Request.Form.Get("settingType")
 
+	var err error
+	var msg string
 	if settingType == "announcement" {
 		announceTitle := c.Request.Form.Get("title")
 		announceBody := c.Request.Form.Get("body")
 		loc, _ := time.LoadLocation(sarpConfig.Timezone)
 		postToDiscord("**" + announceTitle + "**\n" + announceBody)
 		insertAnnouncement(&announcement{time.Now().In(loc), announceTitle, announceBody})
-
+		msg = "Successfully announced!"
 	} else if settingType == "toggleScoring" {
 		acceptingScores = !acceptingScores
 
 	} else if settingType == "wipeDatabase" {
-		err := wipeDatabase()
+		err = wipeDatabase()
 		if err != nil {
 			fmt.Println("Error wiping database", err)
 		}
+		msg = "Successfully wiped database!"
 
 	} else if settingType == "disableTestingID" {
-		err := clearTeamScore("testing_id")
+		err = clearTeamScore("testing_id")
 		if err != nil {
 			fmt.Println("Error clearing testing_id results", err)
 		}
+		msg = "Cleared data for testing_id."
 	}
 
-	c.HTML(http.StatusOK, "settings.html", pageData(c, "settings", gin.H{"scoring": acceptingScores}))
+	c.HTML(http.StatusOK, "settings.html", pageData(c, "settings", gin.H{"scoring": acceptingScores, "msg": msg, "err": err}))
 }
 
 func pageData(c *gin.Context, title string, ginMap gin.H) gin.H {

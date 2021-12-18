@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"time"
@@ -54,15 +53,6 @@ type imageData struct {
 	Name, Color string
 	Records     []scoreEntry
 	Index       int
-}
-
-type imageShell struct {
-	Waiting     bool
-	Active      bool
-	StdinRead   *io.PipeReader
-	StdinWrite  *io.PipeWriter
-	StdoutRead  *io.PipeReader
-	StdoutWrite *io.PipeWriter
 }
 
 type teamData struct {
@@ -384,10 +374,7 @@ func insertAnnouncement(newAnnouncement *announcement) error {
 	initDatabase()
 	coll := mongoClient.Database(dbName).Collection("announcements")
 	_, err := coll.InsertOne(context.TODO(), newAnnouncement)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func getAnnouncements() ([]announcement, error) {

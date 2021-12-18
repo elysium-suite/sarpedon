@@ -4,6 +4,12 @@
 –––––––––––––––––––––––––––––––––––––––––––––––––– -->
 <div class="container">
     <h2>Settings</h2>
+    {{ if .err }}
+    <center>
+        <br>
+        <p style="color: lightred">{{ .err }}</p>
+    </center>
+    {{ end }}
     <center>
         <hr>
     </center>
@@ -20,6 +26,13 @@
             <button type="submit" class="btn btn-primary">Submit</button>
         </div>
     </form>
+
+    {{ if .msg }}
+    <center>
+        <br>
+        <p style="color: lightgreen">{{ .msg }}</p>
+    </center>
+    {{ end }}
 
     <center>
         <hr>
@@ -58,9 +71,9 @@
 
         <h4>Wipe Database</h4>
         <p>(Erases All Scores, Use With Caution)</p>
-        <br>
         <button type="submit" class="btn btn-danger">Wipe Database</button>
     </form>
+    <br>
 </div>
 <!-- End Document
 –––––––––––––––––––––––––––––––––––––––––––––––––– -->

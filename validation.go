@@ -4,10 +4,20 @@ import (
 	"errors"
 	"regexp"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+)
+
+const (
+	updateLen = 10
 )
 
 func validateUpdate(plainUpdate string) error {
-	splitUpdate := strings.Split(plainUpdate, delimiter)[:12]
+	splitUpdate := strings.Split(plainUpdate, delimiter)
+	if len(splitUpdate) < updateLen {
+		return errors.New("Malformed update")
+	}
+	splitUpdate = splitUpdate[:updateLen]
 
 	for _, item := range splitUpdate {
 		if !validateString(item) {
@@ -24,6 +34,20 @@ func validateUpdate(plainUpdate string) error {
 	}
 
 	return nil
+}
+
+func validateReq(c *gin.Context) (string, string, error) {
+	teamID := c.Param("id")
+	if !validateTeam(teamID) {
+		err := errors.New("Invalid team id: " + teamID)
+		return "", "", err
+	}
+	imageName := c.Param("image")
+	if !validateImage(imageName) {
+		err := errors.New("Invalid image name: " + imageName)
+		return "", "", err
+	}
+	return teamID, imageName, nil
 }
 
 func validateString(input string) bool {

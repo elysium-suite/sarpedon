@@ -218,12 +218,9 @@ func consolidateRecords(allRecords []scoreEntry, images []imageData) ([]imageDat
 				record.PlayTimeStr = tempTimeStr[0 : len(tempTimeStr)-3]
 
 				if currentRecord.Time.IsZero() {
-					// fmt.Println("======= setting time ======", record.Time)
 					currentRecord = record
 				}
-				// fmt.Println("CHECKING RECORD", record.Time)
 				if record.Time.Format(timeStr) != currentRecord.Time.Format(timeStr) {
-					// fmt.Println("ADDING new image record, lol:", currentRecord.Time, "versus new", record.Time)
 					images[i].Records = append(images[i].Records, currentRecord)
 					imageRecords = append(imageRecords, timeBegin.Add(currentRecord.PlayTime))
 				}
@@ -232,7 +229,6 @@ func consolidateRecords(allRecords []scoreEntry, images []imageData) ([]imageDat
 		}
 
 		if !currentRecord.Time.IsZero() {
-			// fmt.Println("ADDING new image record, lol:", currentRecord.Time)
 			images[i].Records = append(images[i].Records, currentRecord)
 			imageRecords = append(imageRecords, timeBegin.Add(currentRecord.PlayTime))
 		}

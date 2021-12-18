@@ -27,7 +27,7 @@ func parseUpdate(cryptUpdate string) (scoreEntry, error) {
 	}
 
 	mapUpdate := make(map[string]string)
-	splitUpdate := strings.Split(plainUpdate, delimiter)[:13]
+	splitUpdate := strings.Split(plainUpdate, delimiter)[:updateLen]
 	for i := 0; i < len(splitUpdate)-2; i += 2 {
 		mapUpdate[splitUpdate[i]] = splitUpdate[i+1]
 	}

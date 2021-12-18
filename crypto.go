@@ -10,7 +10,8 @@ import (
 	"io"
 )
 
-var delimiter = "|-S#-|"
+// Use non-ASCII bytes as a delimiter.
+var delimiter = string(byte(255)) + string(byte(222))
 
 // encryptString takes a password and a plaintext and returns an encrypted byte
 // sequence (as a string). It uses AES-GCM with a 12-byte IV (as is
