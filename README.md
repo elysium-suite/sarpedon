@@ -1,12 +1,14 @@
 # sarpedon (Σαρπηδών)
 
-Simple and very fast [aeacus](https://github.com/sourque/aeacus) endpoint.
+Simple and very fast [aeacus](https://github.com/elysium-suite/aeacus) endpoint.
 
 ## Installation
 
+Use these steps for a Linux system with `apt`:
+
 ```bash
 cd /opt
-git clone https://github.com/sourque/sarpedon
+git clone https://github.com/elysium-suite/sarpedon
 cd sarpedon
 bash install.sh
 ```
@@ -23,8 +25,10 @@ Example configuration (`sarpedon.conf`):
 event = "My Event" # Event name
 password = "s3cr3tP4ssw0rd" # Needed for scoring request encryption
 playtime = "6h" # PlayTime limit in format https://godoc.org/time#ParseDuration
+enforce = false # If enforce is set, competitor images will be destroyed after the playtime limit is reached
 timezone = "America/Los_Angeles" # Required for all timestamp conversions, in format https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 discordhook = "https://discord.com/api/webhooks/webhook_id/webhook_token" # Optional, for posting image completions to Discord
+
 
 [[admin]] # Admin account to view vulnerabilities scored
 username = "admin"
@@ -49,4 +53,4 @@ alias = "CoolTeam2"
 email = "coolteam2@example.org"
 ```
 
-Don't know what to use this with? Try [aeacus](https://github.com/sourque/aeacus).
+Don't know what to use this with? Try [aeacus](https://github.com/elysium-suite/aeacus).
