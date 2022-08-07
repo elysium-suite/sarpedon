@@ -25,7 +25,7 @@ func validateUpdate(plainUpdate string) error {
 		}
 	}
 
-	if splitUpdate[0] != "team" || !validateTeam(splitUpdate[1]) {
+	if splitUpdate[0] != "team" || !validateTeamByID(splitUpdate[1]) {
 		return errors.New("Invalid team specified")
 	}
 
@@ -65,6 +65,15 @@ func validateTeam(teamName string) bool {
 			return true
 		}
 		if team.Alias == teamName {
+			return true
+		}
+	}
+	return false
+}
+
+func validateTeamByID(teamName string) bool {
+	for _, team := range sarpConfig.Team {
+		if team.ID == teamName {
 			return true
 		}
 	}
