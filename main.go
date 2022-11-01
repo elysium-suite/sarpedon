@@ -76,7 +76,13 @@ func main() {
 	fmt.Println("Initializing scoreboard data...")
 	initScoreboard()
 
-	r.Run(":4013")
+	s := &http.Server{
+		Addr:         ":4013", // Listening port
+		Handler:      r,
+		ReadTimeout:  time.Duration(sarpConfig.Timeout) * time.Second,
+		WriteTimeout: time.Duration(sarpConfig.Timeout) * time.Second,
+	}
+	s.ListenAndServe()
 }
 
 func viewScoreboard(c *gin.Context) {
@@ -234,7 +240,7 @@ func getStatus(c *gin.Context) {
 			Team:  getTeam(id),
 			Image: getImage(image),
 		})
-		// Kill them if they're over play time limit
+		// Send kill signal if they're over play time limit
 		if err == nil && recentRecord.PlayTime > playTimeLimit && sarpConfig.Enforce {
 			c.JSON(200, gin.H{"status": "DIE"})
 			return

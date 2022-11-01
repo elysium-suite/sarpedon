@@ -15,6 +15,7 @@ type config struct {
 	Timezone    string
 	DiscordHook string
 	Enforce     bool
+	Timeout     int
 	Admin       []adminData
 	Image       []imageData
 	Team        []teamData
@@ -48,6 +49,13 @@ func checkConfig() {
 		if _, err := time.ParseDuration(sarpConfig.PlayTime); err != nil {
 			log.Fatalln("Invalid duration for playtime: " + err.Error())
 		}
+	}
+	if sarpConfig.Timeout == 0 {
+		// Default timeout (in seconds)
+		sarpConfig.Timeout = 15
+	} else if sarpConfig.Timeout < 0 {
+		// If a negative value, set no timeout
+		sarpConfig.Timeout = 0
 	}
 	for _, image := range sarpConfig.Image {
 		if image.Name == "" {

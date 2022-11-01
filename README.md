@@ -25,10 +25,10 @@ Example configuration (`sarpedon.conf`):
 event = "My Event" # Event name
 password = "s3cr3tP4ssw0rd" # Needed for scoring request encryption
 playtime = "6h" # PlayTime limit in format https://godoc.org/time#ParseDuration
-enforce = false # If enforce is set, competitor images will be destroyed after the playtime limit is reached
+enforce = false # (Not supported in aeacus) If enforce is set, images will be sent a kill signal after the playtime limit is reached
 timezone = "America/Los_Angeles" # Required for all timestamp conversions, in format https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 discordhook = "https://discord.com/api/webhooks/webhook_id/webhook_token" # Optional, for posting image completions to Discord
-
+timeout = 15 # Optional, web server timeout in seconds (default: 15 seconds). Set to -1 for no timeout
 
 [[admin]] # Admin account to view vulnerabilities scored
 username = "admin"
