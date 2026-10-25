@@ -8,6 +8,16 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+// releaseData is one practice's answer-key release time, keyed by the levelsvc comp ID.
+// In sarpedon.conf:
+//   [[release]]
+//   comp = "sprint01-accounts-adv-lin"
+//   time = 2026-10-24T19:00:00-07:00
+type releaseData struct {
+	Comp string
+	Time time.Time
+}
+
 type config struct {
 	Event         string
 	Password      string
@@ -19,6 +29,7 @@ type config struct {
 	LevelsvcUrl   string   // base URL of the levelsvc competition engine (default http://127.0.0.1:8099)
 	LevelsvcToken string   // levelsvc admin token, for the creator web pages
 	SprintMS      []string // Weekly Sprint: team aliases in the Middle School division (everyone else is High School); empty = built-in default
+	Release       []releaseData // Weekly Sprint: per-practice answer-key release times (by comp ID). Before a practice's release, its Windows/Linux points count x2 (see practice.go applySprintBonus).
 	Admin         []adminData
 	Image         []imageData
 	Team          []teamData

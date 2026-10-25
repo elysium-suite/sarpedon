@@ -27,10 +27,10 @@ var (
 
 func init() {
 	flag.BoolVar(&debugEnabled, "d", false, "Print verbose debug information")
-	flag.Parse()
 }
 
 func main() {
+	flag.Parse() // parse here, not in init(), so `go test`'s own flags don't collide
 	readConfig(&sarpConfig)
 	checkConfig()
 

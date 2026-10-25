@@ -259,7 +259,8 @@ func fmtProg(f float64) string {
 	return s
 }
 
-// practiceScores maps image -> team alias -> latest score, for practice images only.
+// practiceScores maps image -> team alias -> latest score, for practice images only, with the
+// Weekly Sprint "pre-release x2" bonus applied to Windows/Linux practice images (applySprintBonus).
 func practiceScores() (map[string]map[string]scoreEntry, error) {
 	top, err := getTop()
 	if err != nil {
@@ -275,7 +276,105 @@ func practiceScores() (map[string]map[string]scoreEntry, error) {
 		}
 		m[s.Image.Name][s.Team.Alias] = s
 	}
+	applySprintBonus(m)
 	return m, nil
+}
+
+// applySprintBonus doubles PRE-RELEASE progress on Windows/Linux practice images (the Weekly
+// Sprint incentive to finish a VM before its answer key drops). For each team on such an image:
+//
+//	adjustedScored = before + overall
+//
+// where `before` is the team's best VulnsScored reached before the practice's release time and
+// `overall` its best ever (== 2*before + post-release gains). An image with no release configured,
+// or whose release is still in the future, is fully doubled (before == overall). Cisco and non-
+// practice images are left untouched. VulnsTotal is unchanged, so pctOf may exceed 100% (up to
+// 200%) for VM practices — intended. Releases are configured in sarpedon.conf ([[release]]).
+func applySprintBonus(m map[string]map[string]scoreEntry) {
+	comps, err := fetchPractices() // cached ~30s; callers have already warmed it
+	if err != nil {
+		return // without the comp list we can't tell Windows/Linux from Cisco -> leave scores raw
+	}
+	relByComp := map[string]time.Time{}
+	for _, r := range sarpConfig.Release {
+		relByComp[r.Comp] = r.Time
+	}
+	kindByImage := map[string]string{}
+	releaseByImage := map[string]time.Time{}
+	for _, cp := range comps {
+		t, hasRelease := relByComp[cp.ID]
+		for _, l := range cp.Levels {
+			kindByImage[l.Image] = cp.Kind
+			if hasRelease {
+				releaseByImage[l.Image] = t
+			}
+		}
+	}
+	now := time.Now()
+	for image, teams := range m {
+		if k := kindByImage[image]; k != "windows" && k != "linux" {
+			continue // only the VM practices get the bonus
+		}
+		R, released := releaseByImage[image]
+		if released && !R.After(now) {
+			// released: split each team's pre/post-release progress from the full history
+			adj, err := adjustedScoredByImage(image, R)
+			if err != nil {
+				continue // on a history read error, leave this image's scores raw
+			}
+			for alias, e := range teams {
+				if v, ok := adj[alias]; ok {
+					e.Vulns.VulnsScored = v
+				} else {
+					e.Vulns.VulnsScored *= 2 // no history row matched -> treat as all pre-release
+				}
+				teams[alias] = e
+			}
+		} else {
+			// unreleased (or release still in the future): everything is pre-release -> doubled
+			for alias, e := range teams {
+				e.Vulns.VulnsScored *= 2
+				teams[alias] = e
+			}
+		}
+	}
+}
+
+// adjustedScoredByImage returns each team alias's adjusted VulnsScored for one RELEASED
+// Windows/Linux practice image: before + overall, from the full report history (one read for
+// all teams), where before = best VulnsScored before `release` and overall = best ever.
+func adjustedScoredByImage(image string, release time.Time) (map[string]int, error) {
+	initDatabase()
+	coll := mongoClient.Database(dbName).Collection("scores")
+	historyIndexOnce.Do(func() {
+		coll.Indexes().CreateOne(context.TODO(), mongo.IndexModel{Keys: bson.D{{Key: "image.name", Value: 1}, {Key: "time", Value: 1}}})
+	})
+	opts := options.Find().SetProjection(bson.M{"time": 1, "team.alias": 1, "vulns.vulnsscored": 1})
+	cur, err := coll.Find(context.TODO(), bson.M{"image.name": image}, opts)
+	if err != nil {
+		return nil, err
+	}
+	var rows []scoreEntry
+	if err := cur.All(context.TODO(), &rows); err != nil {
+		return nil, err
+	}
+	before := map[string]int{}
+	overall := map[string]int{}
+	for _, e := range rows {
+		a := e.Team.Alias
+		s := e.Vulns.VulnsScored
+		if s > overall[a] {
+			overall[a] = s
+		}
+		if e.Time.Before(release) && s > before[a] {
+			before[a] = s
+		}
+	}
+	out := make(map[string]int, len(overall))
+	for a, ov := range overall {
+		out[a] = before[a] + ov
+	}
+	return out, nil
 }
 
 // compProgress summarises one team's progress through one practice. Done counts fully-cleared
