@@ -29,6 +29,10 @@ enforce = false # (Not supported in aeacus) If enforce is set, images will be se
 timezone = "America/Los_Angeles" # Required for all timestamp conversions, in format https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 discordhook = "https://discord.com/api/webhooks/webhook_id/webhook_token" # Optional, for posting image completions to Discord
 timeout = 15 # Optional, web server timeout in seconds (default: 15 seconds). Set to -1 for no timeout
+overtime = "6h" # Optional overtime penalty
+overtimepenalty = 25 # Optional overtime penalty
+
+
 
 [[admin]] # Admin account to view vulnerabilities scored
 username = "admin"

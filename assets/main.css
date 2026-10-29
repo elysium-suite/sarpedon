@@ -122,3 +122,9 @@ hr {
 .cmdoutput {
   color: pink;
 }
+
+.ot-badge {
+    color: #ff3b3b;
+    font-weight: bold;
+}
+

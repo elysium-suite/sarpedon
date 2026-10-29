@@ -56,6 +56,7 @@ func parseUpdate(cryptUpdate string) (scoreEntry, error) {
 	calcPlayTime(&newEntry, &lastRecord)
 	calcElapsedTime(&newEntry, &lastRecord)
 	calcCompletionTime(&newEntry, &lastRecord)
+	applyOvertimePenalty(&newEntry)
 	newEntry.PlayTimeStr = formatTime(newEntry.PlayTime)
 	newEntry.ElapsedTimeStr = formatTime(newEntry.ElapsedTime)
 	replaceScore(&newEntry)
@@ -158,6 +159,7 @@ func parseScoresIntoTeams(scores []scoreEntry) ([]teamData, error) {
 	imageCount := 0
 	totalScore := 0
 	playTime, _ := time.ParseDuration("0s")
+	teamOT := false
 	currentTeam := scores[0].Team
 
 	for _, score := range scores {
@@ -169,7 +171,9 @@ func parseScoresIntoTeams(scores []scoreEntry) ([]teamData, error) {
 				ImageCount: imageCount,
 				Score:      totalScore,
 				Time:       formatTime(playTime),
+				OT:         teamOT,
 			})
+			teamOT = false
 			imageCount = 0
 			totalScore = 0
 			playTime, _ = time.ParseDuration("0s")
@@ -177,6 +181,9 @@ func parseScoresIntoTeams(scores []scoreEntry) ([]teamData, error) {
 		}
 		imageCount++
 		totalScore += score.Points
+		if hasOvertimePenalty(score) {
+			teamOT = true
+		}
 		playTime += score.PlayTime
 	}
 
@@ -187,6 +194,7 @@ func parseScoresIntoTeams(scores []scoreEntry) ([]teamData, error) {
 		ImageCount: imageCount,
 		Score:      totalScore,
 		Time:       formatTime(playTime),
+		OT:         teamOT,
 	})
 
 	sort.SliceStable(td, func(i, j int) bool {

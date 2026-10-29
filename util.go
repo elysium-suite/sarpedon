@@ -270,3 +270,32 @@ func generateLabels(firstTime, lastTime time.Time) []string {
 	}
 	return labels
 }
+
+
+const overtimePenaltyPrefix = "Overtime penalty"
+
+func hasOvertimePenalty(score scoreEntry) bool {
+	for _, item := range score.Vulns.VulnItems {
+		if item.VulnPoints < 0 && strings.HasPrefix(item.VulnText, overtimePenaltyPrefix) {
+			return true
+		}
+	}
+	return false
+}
+
+// The overtime clock starts after the first scoring report is recieved, which should be within a minute of entering in the team id
+func applyOvertimePenalty(newEntry *scoreEntry) {
+	if sarpConfig.Overtime == "" || newEntry.Team.ID == "testing_id" {
+		return
+	}
+	limit, err := time.ParseDuration(sarpConfig.Overtime)
+	if err != nil || newEntry.ElapsedTime <= limit {
+		return
+	}
+	penalty := sarpConfig.OvertimePenalty
+	newEntry.Points -= penalty
+	newEntry.Vulns.VulnItems = append(newEntry.Vulns.VulnItems, vulnItem{
+		VulnText:   overtimePenaltyPrefix + " (over " + sarpConfig.Overtime + " since Team ID entered)",
+		VulnPoints: -penalty,
+	})
+}

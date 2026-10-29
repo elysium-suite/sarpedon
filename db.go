@@ -59,6 +59,7 @@ type teamData struct {
 	ID, Alias, Email  string
 	ImageCount, Score int
 	Time              string
+	OT                bool // true if any of the team's images has an overtime penalty
 }
 
 type announcement struct {

@@ -72,7 +72,7 @@
                     </td>
                     <td>
                         <a href="{{ $linktext }}">
-                            {{ $team.Alias }}
+                            {{ $team.Alias }}{{ if $team.OT }} - <span class="ot-badge" style="color: #ff3b3b; font-weight: bold;" title="Overtime penalty applied">OT</span>{{ end }}
                         </a>
                     </td>
                     {{ if not $imageFilter }}

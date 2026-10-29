@@ -9,17 +9,19 @@ import (
 )
 
 type config struct {
-	Event       string
-	Password    string
-	PlayTime    string
-	Timezone    string
-	DiscordHook string
-	Enforce     bool
-	Timeout     int
-	Admin       []adminData
-	Image       []imageData
-	Team        []teamData
-	Alternate   alternateData
+	Event           string
+	Password        string
+	PlayTime        string
+	Overtime        string
+	OvertimePenalty int
+	Timezone        string
+	DiscordHook     string
+	Enforce         bool
+	Timeout         int
+	Admin           []adminData
+	Image           []imageData
+	Team            []teamData
+	Alternate       alternateData
 }
 
 func readConfig(conf *config) {
@@ -48,6 +50,14 @@ func checkConfig() {
 	if sarpConfig.PlayTime != "" {
 		if _, err := time.ParseDuration(sarpConfig.PlayTime); err != nil {
 			log.Fatalln("Invalid duration for playtime: " + err.Error())
+		}
+	}
+	if sarpConfig.Overtime != "" {
+		if d, err := time.ParseDuration(sarpConfig.Overtime); err != nil || d <= 0 {
+			log.Fatalln("Invalid duration for overtime (e.g. \"6h\")")
+		}
+		if sarpConfig.OvertimePenalty <= 0 {
+			sarpConfig.OvertimePenalty = 25
 		}
 	}
 	if sarpConfig.Timeout == 0 {
