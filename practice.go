@@ -233,16 +233,18 @@ func cellFor(e scoreEntry, ok bool, threshold int) levelCell {
 
 // cellFrac is one level's fractional completion toward the leaderboard: a cleared level counts
 // as a whole 1.0, and a level still in progress counts its completion percentage (so 75% = 0.75).
+// Weekly Sprint VM practices can exceed 100% (pre-release x2, see applySprintBonus, up to 200%);
+// that bonus is kept (a full-score-before-release level counts 2.0, shown as 2/1), not clamped to 1.
 func cellFrac(c levelCell) float64 {
-	if c.Cleared {
-		return 1
-	}
 	p := c.Pct
-	if p > 100 {
-		p = 100
+	if p > 200 {
+		p = 200
 	}
 	if p < 0 {
 		p = 0
+	}
+	if c.Cleared && p < 100 {
+		return 1 // cleared at a threshold below 100%
 	}
 	return float64(p) / 100
 }
