@@ -51,6 +51,8 @@ func TestSprintBonus(t *testing.T) {
 		mk("rel-win", "bravo", 10, R.Add(2*time.Hour)),
 		mk("unrel-lin", "charlie", 8, R.Add(1*time.Hour)),
 		mk("cisco1", "delta", 8, R.Add(1*time.Hour)),
+		mk("cisco1", "echo", 10, R.Add(1*time.Hour)), // cleared, then the agent re-reported 0
+		mk("cisco1", "echo", 0, R.Add(2*time.Hour)),
 	}
 	if _, err := db.Collection("scores").InsertMany(context.TODO(), hist); err != nil {
 		t.Fatal(err)
@@ -61,6 +63,7 @@ func TestSprintBonus(t *testing.T) {
 		mk("rel-win", "bravo", 10, R.Add(2*time.Hour)),
 		mk("unrel-lin", "charlie", 8, R.Add(1*time.Hour)),
 		mk("cisco1", "delta", 8, R.Add(1*time.Hour)),
+		mk("cisco1", "echo", 0, R.Add(2*time.Hour)),
 	}
 	if _, err := db.Collection("scoreboard").InsertMany(context.TODO(), latest); err != nil {
 		t.Fatal(err)
@@ -86,4 +89,5 @@ func TestSprintBonus(t *testing.T) {
 	check("case4 100%% pre, reported after", "rel-win", "bravo", 200)
 	check("case2 unreleased win/lin doubled", "unrel-lin", "charlie", 160)
 	check("case3 cisco untouched", "cisco1", "delta", 80)
+	check("case5 cisco clear survives a later 0% report", "cisco1", "echo", 100)
 }

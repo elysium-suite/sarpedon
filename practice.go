@@ -315,7 +315,8 @@ func applySprintBonus(m map[string]map[string]scoreEntry) {
 	now := time.Now()
 	for image, teams := range m {
 		if k := kindByImage[image]; k != "windows" && k != "linux" {
-			continue // only the VM practices get the bonus
+			keepBestScore(image, teams) // Cisco: no bonus, but a clear is never lost to a later 0% report
+			continue
 		}
 		R, released := releaseByImage[image]
 		if released && !R.After(now) {
@@ -340,6 +341,63 @@ func applySprintBonus(m map[string]map[string]scoreEntry) {
 			}
 		}
 	}
+}
+
+// keepBestScore raises each team's latest VulnsScored on a practice image to the best it has ever
+// reported. The board shows the latest report per (image, team), and the PT agent can report 0
+// again after a level was completed (the activity is reopened or reset right after finishing),
+// which wiped the clear. Windows/Linux images already use best-ever via adjustedScoredByImage.
+func keepBestScore(image string, teams map[string]scoreEntry) {
+	best, err := bestScoredByImage(image)
+	if err != nil {
+		return // history unreadable -> leave the latest scores as reported
+	}
+	for alias, e := range teams {
+		if b := best[alias]; b > e.Vulns.VulnsScored {
+			e.Vulns.VulnsScored = b
+			if b > 0 && e.Vulns.VulnsTotal < b {
+				e.Vulns.VulnsTotal = b
+			}
+			teams[alias] = e
+		}
+	}
+}
+
+var (
+	bestMu    sync.Mutex
+	bestCache = map[string]map[string]int{}
+	bestAt    = map[string]time.Time{}
+)
+
+// bestScoredByImage returns each team alias's best-ever VulnsScored on one image (cached 30s).
+func bestScoredByImage(image string) (map[string]int, error) {
+	bestMu.Lock()
+	defer bestMu.Unlock()
+	if m, ok := bestCache[image]; ok && time.Since(bestAt[image]) < 30*time.Second {
+		return m, nil
+	}
+	initDatabase()
+	coll := mongoClient.Database(dbName).Collection("scores")
+	cur, err := coll.Aggregate(context.TODO(), mongo.Pipeline{
+		{{Key: "$match", Value: bson.M{"image.name": image}}},
+		{{Key: "$group", Value: bson.M{"_id": "$team.alias", "best": bson.M{"$max": "$vulns.vulnsscored"}}}},
+	})
+	if err != nil {
+		return nil, err
+	}
+	var rows []struct {
+		Alias string `bson:"_id"`
+		Best  int    `bson:"best"`
+	}
+	if err := cur.All(context.TODO(), &rows); err != nil {
+		return nil, err
+	}
+	m := make(map[string]int, len(rows))
+	for _, r := range rows {
+		m[r.Alias] = r.Best
+	}
+	bestCache[image], bestAt[image] = m, time.Now()
+	return m, nil
 }
 
 // adjustedScoredByImage returns each team alias's adjusted VulnsScored for one RELEASED
