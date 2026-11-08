@@ -152,6 +152,50 @@ pre {
 <p style="color: #aab3bd;">Practice progress is unavailable right now ({{ .practiceErr }}).</p>
 {{ end }}
 
+{{ if .user }}
+    <br><br>
+    <h2>Information 👨‍🌾 🔫</h2>
+
+    {{ range $index, $image := $images }}
+    <br>
+        {{ if $image.Records }}
+            <div class="imgheader">
+                <h4 style="display:inline-block" id="info{{ $index }}">{{ $image.Name }}</h4>
+                <a href="/shell/{{ $team.ID }}/{{ $image.Name }}"><input type="submit" value="🐚"/></a>
+            </div>
+            {{ $selected := index $image.Records $image.Index }}
+            <form action="#info{{ $index }}">
+                <label>Record:
+                    <select name="record{{ $index }}">
+                            <option value="{{ $image.Index }}" selected>{{ (local $selected.Time).Format "2006-01-02 15:04:05 MST" }} (current)</option>
+                            {{ range $index1, $record := $image.Records }}
+                                {{ if not (eq $index1 $image.Index ) }}
+                                    <option value="{{ $index1 }}">{{ (local $record.Time).Format "2006-01-02 15:04:05 MST" }}</option>
+                                {{ end }}
+                            {{ end }}
+                    <select>
+                </label>
+                <input type="submit" value="✅"/>
+            </form>
+            <br>
+            <table class="table table-borderless table-dark table-striped">
+                <thead class="thead-dark">
+                    <th>Vuln Text</th>
+                    <th>Points</th>
+                </thead>
+                <tbody>
+                    {{ range $vuln := $selected.Vulns.VulnItems }}
+                    <tr>
+                        <td>{{ $vuln.VulnText }}</td>
+                        <td>{{ $vuln.VulnPoints }}</td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+            <br>
+        {{ end }}
+    {{ end }}
+{{ end }}
 <br>
 <br>
 
