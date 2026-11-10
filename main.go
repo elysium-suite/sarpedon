@@ -83,6 +83,8 @@ func main() {
 		// test-creator competition console (drives levelsvc)
 		authRoutes.GET("/manage", viewManage)
 		authRoutes.POST("/manage/action", manageAction)
+		authRoutes.GET("/manage/score", viewSetScore)
+		authRoutes.POST("/manage/score", manageSetScore)
 		authRoutes.GET("/manage/new", viewManageNew)
 		authRoutes.POST("/manage/new", manageCreate)
 		authRoutes.GET("/manage/edit", viewManageEdit)

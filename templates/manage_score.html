@@ -1,0 +1,35 @@
+{{ template "head.html" . }}
+{{ template "nav.html" . }}
+<div class="container">
+  <h2>Set a team's score</h2>
+  <p><a href="/manage">&larr; Competitions</a></p>
+  {{ if .err }}<center><p style="color:#e66">{{ .err }}</p></center>{{ end }}
+  {{ if .msg }}<center><p style="color:{{ if .isErr }}#e66{{ else }}lightgreen{{ end }}">{{ .msg }}</p></center>{{ end }}
+  <p style="color:#cfd3d7">For a student whose VM cannot run the scoring agent. This <b>replaces</b> every score the team has for that level
+    with the one you enter. A later score from the student's own agent can still replace it if it is higher.</p>
+
+  <form method="GET" action="/manage/score" style="margin-bottom:18px">
+    <label>Competition
+      <select name="comp" class="form-control" onchange="this.form.submit()">
+        <option value="">— choose —</option>
+        {{ range .comps }}<option value="{{ .ID }}" {{ if eq .ID $.comp }}selected{{ end }}>{{ .Name }} ({{ .ID }})</option>{{ end }}
+      </select>
+    </label>
+    <noscript><button class="btn btn-primary">Choose</button></noscript>
+  </form>
+
+  {{ if .levels }}
+  <form method="POST" action="/manage/score" onsubmit="return confirm('Replace this team\'s score for that level?')">
+    <input type="hidden" name="comp" value="{{ .comp }}">
+    <div class="form-group"><label>Team (id or alias)
+      <input name="team" class="form-control" list="teams" value="{{ .team }}" required autocomplete="off"></label>
+      <datalist id="teams">{{ range .teams }}<option value="{{ . }}">{{ end }}</datalist></div>
+    <div class="form-group"><label>Level
+      <select name="level" class="form-control">{{ range .levels }}<option value="{{ . }}">Level {{ . }}</option>{{ end }}</select></label></div>
+    <div class="form-group"><label>Points scored <input name="scored" type="number" min="0" class="form-control" required></label>
+      <label style="margin-left:12px">out of <input name="total" type="number" min="1" value="100" class="form-control"></label></div>
+    <button class="btn btn-primary">Save score</button>
+  </form>
+  {{ end }}
+</div>
+{{ template "feet.html" }}

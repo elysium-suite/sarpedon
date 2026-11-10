@@ -32,6 +32,7 @@
           <td class="actions">
             <form method="GET" action="/manage/edit"><input type="hidden" name="comp" value="{{ .id }}"><button class="btn btn-primary">Edit</button></form>
             <form method="GET" action="/manage/review"><input type="hidden" name="comp" value="{{ .id }}"><button class="btn btn-primary">Review</button></form>
+            <form method="GET" action="/manage/score"><input type="hidden" name="comp" value="{{ .id }}"><button class="btn btn-primary">Set score</button></form>
             <form method="GET" action="/manage/ai"><input type="hidden" name="comp" value="{{ .id }}"><button class="btn btn-primary">AI flags</button></form>
             <form method="POST" action="/manage/action"><input type="hidden" name="comp" value="{{ .id }}"><input type="hidden" name="action" value="default"><button class="btn btn-primary">Default</button></form>
             <form method="POST" action="/manage/action"><input type="hidden" name="comp" value="{{ .id }}"><input type="hidden" name="action" value="{{ if .hidden }}show{{ else }}hide{{ end }}"><button class="btn btn-primary">{{ if .hidden }}Show{{ else }}Hide{{ end }}</button></form>
