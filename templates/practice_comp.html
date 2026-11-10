@@ -13,6 +13,7 @@
         <a href="/practice?cat={{ .cat.Key }}">&larr; {{ .cat.Name }} practice</a>{{ if .comp.Unit }} &middot; Unit {{ .comp.Unit }}{{ end }} &middot; {{ len $levels }} level{{ if ne (len $levels) 1 }}s{{ end }}.
         Each cell is {{ .cat.Cell }}; &#10003; = cleared.
     </p>
+    {{ if .user }}<p><a class="btn btn-primary" href="/manage/score?comp={{ .comp.ID }}">Set / add a score for a student</a></p>{{ end }}
     <ol class="pc-levels">
         {{ range $l := $levels }}<li value="{{ $l.Level }}">{{ $l.Name }}</li>{{ end }}
     </ol>
@@ -30,7 +31,7 @@
             <tbody>
                 {{ range $r := .rows }}
                 <tr>
-                    <td><a href="/team/{{ $r.Team }}">{{ $r.Team }}</a></td>
+                    <td><a href="/team/{{ $r.Team }}">{{ $r.Team }}</a>{{ if $.user }} <a href="/manage/score?comp={{ $.comp.ID }}&team={{ $r.Team }}" title="Set this team's score">[set score]</a>{{ end }}</td>
                     <td>{{ $r.ProgStr }} / {{ len $levels }}</td>
                     {{ range $i, $cell := $r.Cells }}<td class="pc-cell {{ $cell.Class }}" title="{{ (index $levels $i).Name }}">{{ if $cell.Started }}{{ $cell.Pct }}%{{ if $cell.Cleared }} &#10003;{{ end }}{{ else }}&ndash;{{ end }}</td>{{ end }}
                 </tr>

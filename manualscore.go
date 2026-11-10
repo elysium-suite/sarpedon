@@ -19,6 +19,18 @@ type scoreComp struct {
 	ID     string
 	Name   string
 	Levels []int
+	Info   []scoreLevel
+}
+
+// scoreLevel is one level with its image, and (once a team is chosen) that team's current score.
+type scoreLevel struct {
+	Level   int
+	Name    string
+	Image   string
+	Has     bool
+	Scored  int
+	Total   int
+	Percent int
 }
 
 // scoreComps lists the competitions with their level numbers 1..N (levelsvc /admin/competitions).
@@ -37,6 +49,19 @@ func scoreComps() ([]scoreComp, error) {
 		sc := scoreComp{ID: id, Name: name}
 		for i := 1; i <= int(n); i++ {
 			sc.Levels = append(sc.Levels, i)
+			sc.Info = append(sc.Info, scoreLevel{Level: i, Name: "Level " + strconv.Itoa(i)})
+		}
+		if infos, ok := m["levelInfo"].([]interface{}); ok {
+			for _, x := range infos {
+				li, _ := x.(map[string]interface{})
+				lv, _ := li["level"].(float64)
+				if i := int(lv) - 1; i >= 0 && i < len(sc.Info) {
+					if nm, _ := li["name"].(string); nm != "" {
+						sc.Info[i].Name = nm
+					}
+					sc.Info[i].Image, _ = li["image"].(string)
+				}
+			}
 		}
 		if id != "" {
 			out = append(out, sc)
@@ -52,6 +77,31 @@ func scoreTeams() []string {
 		out = append(out, t.ID)
 		if t.Alias != "" && !strings.EqualFold(t.Alias, t.ID) {
 			out = append(out, t.Alias)
+		}
+	}
+	return out
+}
+
+// withCurrentScores fills in the team's present score on each level (what the scoreboard holds
+// now, from the agent or a manual entry), so the admin sees what they are replacing.
+func withCurrentScores(info []scoreLevel, team string) []scoreLevel {
+	out := append([]scoreLevel(nil), info...)
+	team = strings.TrimSpace(team)
+	if team == "" {
+		return out
+	}
+	top, err := getTop()
+	if err != nil {
+		return out
+	}
+	for _, e := range top {
+		if !strings.EqualFold(e.Team.Alias, team) && !strings.EqualFold(e.Team.ID, team) {
+			continue
+		}
+		for i := range out {
+			if out[i].Image != "" && out[i].Image == e.Image.Name {
+				out[i].Has, out[i].Scored, out[i].Total, out[i].Percent = true, e.Vulns.VulnsScored, e.Vulns.VulnsTotal, pctOf(e)
+			}
 		}
 	}
 	return out
@@ -74,6 +124,7 @@ func viewSetScore(c *gin.Context) {
 	for _, sc := range comps {
 		if sc.ID == c.Query("comp") {
 			data["levels"] = sc.Levels
+			data["info"] = withCurrentScores(sc.Info, c.Query("team"))
 		}
 	}
 	c.HTML(http.StatusOK, "manage_score.html", pageData(c, "Set score", data))
