@@ -2,6 +2,7 @@ package main
 
 import (
 	"html/template"
+	"strings"
 	"testing"
 )
 
@@ -28,5 +29,18 @@ func TestManageScoreTemplateRenders(t *testing.T) {
 	tpl := template.Must(template.New("").Funcs(template.FuncMap{"increment": func(n int) int { return n + 1 }, "local": localTime}).ParseGlob("templates/*"))
 	if tpl.Lookup("manage_score.html") == nil {
 		t.Fatal("manage_score.html missing")
+	}
+}
+
+func TestScoreTeamsAlphabetical(t *testing.T) {
+	old := sarpConfig.Team
+	defer func() { sarpConfig.Team = old }()
+	sarpConfig.Team = nil
+	for _, n := range []string{"zed", "Bob", "alice"} {
+		sarpConfig.Team = append(sarpConfig.Team, teamData{ID: n})
+	}
+	got := strings.Join(scoreTeams(), ",")
+	if got != "alice,Bob,zed" {
+		t.Fatalf("got %s", got)
 	}
 }

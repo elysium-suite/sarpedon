@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -79,6 +80,7 @@ func scoreTeams() []string {
 			out = append(out, t.Alias)
 		}
 	}
+	sort.SliceStable(out, func(i, j int) bool { return strings.ToLower(out[i]) < strings.ToLower(out[j]) })
 	return out
 }
 
