@@ -54,9 +54,13 @@ func parseUpdate(cryptUpdate, sourceIP string) (scoreEntry, error) {
 		return scoreEntry{}, errors.Wrap(err, "Update validation failed")
 	}
 
+	d := updateDelimiter(plainUpdate)
+	splitUpdate := strings.Split(plainUpdate, d)
+	if d == delimiter {
+		splitUpdate = splitUpdate[:updateLen]
+	}
 	mapUpdate := make(map[string]string)
-	splitUpdate := strings.Split(plainUpdate, delimiter)[:updateLen]
-	for i := 0; i < len(splitUpdate)-2; i += 2 {
+	for i := 0; i+1 < len(splitUpdate); i += 2 {
 		mapUpdate[splitUpdate[i]] = splitUpdate[i+1]
 	}
 	// a per-image key may only submit for its own image (anti-forgery)
@@ -107,7 +111,7 @@ func parseVulns(vulnText string, imagePoints int, key string) (vulnWrapper, erro
 		return wrapper, err
 	}
 
-	splitVulns := strings.Split(plainVulns, delimiter)
+	splitVulns := strings.Split(plainVulns, updateDelimiter(plainVulns))
 	scored, err := strconv.Atoi(splitVulns[0])
 	if err != nil {
 		return wrapper, err
