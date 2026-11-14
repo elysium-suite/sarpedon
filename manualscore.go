@@ -278,6 +278,13 @@ func mirrorToBoard(comp string, q url.Values) error {
 	if team.ID == "" {
 		team = teamData{ID: q.Get("team")}
 	}
+	// levelsvc stores the manual record with the team id only; the practice pages group the
+	// history by team alias, so without the alias the score never shows for the team there.
+	initDatabase()
+	if _, err := mongoClient.Database(dbName).Collection("scores").UpdateMany(context.TODO(),
+		bson.D{{"team.id", team.ID}, {"image.name", image}, {"manual", true}}, bson.D{{"$set", bson.D{{"team", team}}}}); err != nil {
+		return err
+	}
 	scored, _ := strconv.Atoi(q.Get("scored"))
 	total, _ := strconv.Atoi(q.Get("total"))
 	now := time.Now().UTC()
