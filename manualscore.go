@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -11,6 +12,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // manualscore.go: the admin page to set or overwrite a team's score for a level (projman #339),
@@ -31,6 +35,7 @@ type scoreLevel struct {
 	Name    string
 	Image   string
 	Has     bool
+	Manual  bool // the current score was typed in by an admin (can be removed)
 	Scored  int
 	Total   int
 	Percent int
@@ -98,6 +103,7 @@ func withCurrentScores(info []scoreLevel, team string) []scoreLevel {
 	if err != nil {
 		return out
 	}
+	manual := manualImages(team)
 	for _, e := range top {
 		if !strings.EqualFold(e.Team.Alias, team) && !strings.EqualFold(e.Team.ID, team) {
 			continue
@@ -105,10 +111,100 @@ func withCurrentScores(info []scoreLevel, team string) []scoreLevel {
 		for i := range out {
 			if out[i].Image != "" && out[i].Image == e.Image.Name {
 				out[i].Has, out[i].Scored, out[i].Total, out[i].Percent = true, e.Vulns.VulnsScored, e.Vulns.VulnsTotal, pctOf(e)
+				out[i].Manual = manual[e.Image.Name]
 			}
 		}
 	}
 	return out
+}
+
+// manualImages: the image names for which this team (id or alias) has a manual score on record.
+func manualImages(team string) map[string]bool {
+	out := map[string]bool{}
+	id := getTeam(team).ID
+	if id == "" {
+		id = team
+	}
+	coll := mongoClient.Database(dbName).Collection("scores")
+	cur, err := coll.Find(context.TODO(), bson.D{{"team.id", id}, {"manual", true}})
+	if err != nil {
+		return out
+	}
+	var docs []scoreEntry
+	if cur.All(context.TODO(), &docs) == nil {
+		for _, d := range docs {
+			out[d.Image.Name] = true
+		}
+	}
+	return out
+}
+
+// removeManual deletes a team's manual score for one image and fixes the board: the board entry
+// goes back to the newest remaining score from the history, or disappears if there is none.
+func removeManual(team teamData, image string) (int64, error) {
+	initDatabase()
+	scores := mongoClient.Database(dbName).Collection("scores")
+	res, err := scores.DeleteMany(context.TODO(), bson.D{{"team.id", team.ID}, {"image.name", image}, {"manual", true}})
+	if err != nil || res.DeletedCount == 0 {
+		return 0, err
+	}
+	var last scoreEntry
+	err = scores.FindOne(context.TODO(), bson.D{{"team.id", team.ID}, {"image.name", image}},
+		options.FindOne().SetSort(bson.D{{"time", -1}})).Decode(&last)
+	board := mongoClient.Database(dbName).Collection("scoreboard")
+	if err == mongo.ErrNoDocuments {
+		_, err = board.DeleteMany(context.TODO(), bson.D{{"team.id", team.ID}, {"image.name", image}})
+		return res.DeletedCount, err
+	}
+	if err != nil {
+		return res.DeletedCount, err
+	}
+	last.Team = team
+	if full := getImage(image); full.Name != "" {
+		last.Image = full
+	}
+	return res.DeletedCount, replaceScore(&last)
+}
+
+func manageRemoveManualScore(c *gin.Context) {
+	comp := c.PostForm("comp")
+	back := func(m string) {
+		c.Redirect(http.StatusSeeOther, "/manage/score?comp="+url.QueryEscape(comp)+"&team="+url.QueryEscape(c.PostForm("team"))+"&msg="+url.QueryEscape(m))
+	}
+	lvl, err := strconv.Atoi(c.PostForm("level"))
+	teamName := strings.TrimSpace(c.PostForm("team"))
+	if comp == "" || teamName == "" || err != nil || lvl < 1 {
+		back("error: Choose a competition, a team and a level.")
+		return
+	}
+	comps, err := scoreComps()
+	if err != nil {
+		back("error: " + err.Error())
+		return
+	}
+	image := ""
+	for _, sc := range comps {
+		if sc.ID == comp && lvl <= len(sc.Info) {
+			image = sc.Info[lvl-1].Image
+		}
+	}
+	team := getTeam(teamName)
+	if team.ID == "" {
+		team = teamData{ID: teamName}
+	}
+	if image == "" {
+		back("error: that level has no image.")
+		return
+	}
+	n, err := removeManual(team, image)
+	switch {
+	case err != nil:
+		back("error: " + err.Error())
+	case n == 0:
+		back("error: " + teamName + " has no manual score on level " + strconv.Itoa(lvl) + ".")
+	default:
+		back("Removed the manual score for " + teamName + " on level " + strconv.Itoa(lvl) + " of " + comp + ".")
+	}
 }
 
 func viewSetScore(c *gin.Context) {

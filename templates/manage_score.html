@@ -16,7 +16,7 @@
   {{ if .err }}<p style="color:#e66">{{ .err }}</p>{{ end }}
   {{ if .msg }}<p style="color:{{ if .isErr }}#e66{{ else }}lightgreen{{ end }}">{{ .msg }}</p>{{ end }}
   <p style="color:#cfd3d7">For a student whose VM cannot run the scoring agent. This <b>replaces</b> every score the team has for that level
-    with the one you enter. A later score from the student's own agent can still replace it if it is higher.</p>
+    with the one you enter. A later score from the student's own agent can still replace it if it is higher. A level that shows a button on the right has a manual score: remove it to undo the override.</p>
 
   <form method="GET" action="/manage/score">
     <div class="field"><label for="comp">Competition</label>
@@ -35,8 +35,11 @@
   {{ if and .levels .team }}
   <h5>Current scores for {{ .team }}</h5>
   <table class="table table-dark table-sm">
-    <thead><tr><th>Level</th><th>Name</th><th>Score</th></tr></thead>
-    <tbody>{{ range .info }}<tr><td>{{ .Level }}</td><td>{{ .Name }}</td><td>{{ if .Has }}{{ .Scored }} / {{ .Total }} ({{ .Percent }}%){{ else }}<span style="color:#888">no score</span>{{ end }}</td></tr>{{ end }}</tbody>
+    <thead><tr><th>Level</th><th>Name</th><th>Score</th><th></th></tr></thead>
+    <tbody>{{ range .info }}<tr><td>{{ .Level }}</td><td>{{ .Name }}</td><td>{{ if .Has }}{{ .Scored }} / {{ .Total }} ({{ .Percent }}%){{ else }}<span style="color:#888">no score</span>{{ end }}</td>
+      <td>{{ if .Manual }}<form method="POST" action="/manage/score/remove" style="margin:0" onsubmit="return confirm('Remove the manual score for level {{ .Level }}? The team goes back to having no score there unless its own agent has reported one.')">
+        <input type="hidden" name="comp" value="{{ $.comp }}"><input type="hidden" name="team" value="{{ $.team }}"><input type="hidden" name="level" value="{{ .Level }}">
+        <button class="btn btn-sm btn-outline-danger">Remove manual score</button></form>{{ end }}</td></tr>{{ end }}</tbody>
   </table>
 
   <form method="POST" action="/manage/score" onsubmit="return confirm('Replace this team\'s score for that level?')">
