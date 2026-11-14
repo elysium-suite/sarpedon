@@ -1,12 +1,14 @@
 package main
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -158,6 +160,42 @@ func setScoreQuery(comp, team, level, scored, total string) (url.Values, string)
 	return url.Values{"comp": {comp}, "team": {team}, "level": {strconv.Itoa(lvl)}, "scored": {strconv.Itoa(s)}, "total": {strconv.Itoa(t)}}, ""
 }
 
+// mirrorToBoard puts the manual score on the scoreboard itself. levelsvc writes only the "scores"
+// history, and the board (getTop) reads the "scoreboard" collection, which is rebuilt from the
+// history only when sarpedon starts, so without this a manual score stays invisible until restart.
+func mirrorToBoard(comp string, q url.Values) error {
+	comps, err := scoreComps()
+	if err != nil {
+		return err
+	}
+	lvl, _ := strconv.Atoi(q.Get("level"))
+	image := ""
+	for _, sc := range comps {
+		if sc.ID == comp && lvl >= 1 && lvl <= len(sc.Info) {
+			image = sc.Info[lvl-1].Image
+		}
+	}
+	if image == "" {
+		return errors.New("level has no image")
+	}
+	team := getTeam(q.Get("team"))
+	if team.ID == "" {
+		team = teamData{ID: q.Get("team")}
+	}
+	scored, _ := strconv.Atoi(q.Get("scored"))
+	total, _ := strconv.Atoi(q.Get("total"))
+	now := time.Now().UTC()
+	e := scoreEntry{
+		Time: now, Team: team, Image: imageData{Name: image}, Points: scored, CompletionTime: now,
+		Vulns: vulnWrapper{VulnsScored: scored, VulnsTotal: total,
+			VulnItems: []vulnItem{{VulnText: "Manually set by admin", VulnPoints: scored}}},
+	}
+	if full := getImage(image); full.Name != "" {
+		e.Image = full
+	}
+	return replaceScore(&e)
+}
+
 func manageSetScore(c *gin.Context) {
 	comp := c.PostForm("comp")
 	back := func(m string) {
@@ -177,6 +215,10 @@ func manageSetScore(c *gin.Context) {
 	resp.Body.Close()
 	if resp.StatusCode != 200 {
 		back("error: " + strings.TrimSpace(string(b)))
+		return
+	}
+	if err := mirrorToBoard(comp, q); err != nil {
+		back("error: saved, but the scoreboard did not update (" + err.Error() + ")")
 		return
 	}
 	back("Saved: " + q.Get("team") + " now has " + q.Get("scored") + "/" + q.Get("total") + " on level " + q.Get("level") + " of " + comp + ".")
