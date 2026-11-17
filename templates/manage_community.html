@@ -6,16 +6,16 @@
   {{ if .msg }}<p style="color:lightgreen">{{ .msg }}</p>{{ end }}
   {{ if .err }}<p style="color:#e66">Feed unavailable: {{ .err }}</p>{{ end }}
 
-  <h4>Link a Discord user to a scoreboard id</h4>
+  <h4>Link a Discord user to a scoreboard alias</h4>
   <form method="POST" action="/manage/community/link" class="form-inline" style="gap:8px">
     <input class="form-control" name="discord" list="dusers" placeholder="Discord user" required>
-    <input class="form-control" name="team" list="dteams" placeholder="Scoreboard id (blank = unlink)">
+    <input class="form-control" name="team" list="dteams" placeholder="Scoreboard alias (blank = unlink)">
     <button class="btn btn-primary">Save link</button>
   </form>
   <datalist id="dusers">{{ range .users }}<option value="{{ . }}">{{ end }}</datalist>
   <datalist id="dteams">{{ range .teams }}<option value="{{ . }}">{{ end }}</datalist>
   <table class="table table-dark table-sm" style="margin-top:12px; max-width:640px;">
-    <thead><tr><th>Discord user</th><th>Scoreboard id</th><th></th></tr></thead>
+    <thead><tr><th>Discord user</th><th>Scoreboard alias</th><th></th></tr></thead>
     <tbody>
     {{ range .links }}<tr><td>{{ .Discord }}</td><td>{{ .Team }}</td>
       <td><form method="POST" action="/manage/community/link"><input type="hidden" name="discord" value="{{ .Discord }}"><input type="hidden" name="team" value=""><button class="btn btn-sm btn-secondary">Unlink</button></form></td></tr>

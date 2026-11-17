@@ -7,7 +7,7 @@
     {{ else }}
     {{ $dur := .dur }}{{ $num := .num }}{{ $e := .entry }}
     <h2>{{ .image }} &mdash; {{ $e.User }}</h2>
-    <p style="color:#aab3bd;">{{ if $e.Team }}Team {{ $e.Team }} &middot; {{ end }}{{ if .linked }}Scoreboard id {{ .linked }} &middot; {{ end }}{{ $e.Submissions }} submission(s){{ if $e.Rank }} &middot; rank {{ $e.Rank }}{{ end }}</p>
+    <p style="color:#aab3bd;">{{ if $e.Team }}Team {{ $e.Team }} &middot; {{ end }}{{ if .linked }}Scoreboard alias {{ .linked }} &middot; {{ end }}{{ $e.Submissions }} submission(s){{ if $e.Rank }} &middot; rank {{ $e.Rank }}{{ end }}</p>
     <h4 style="margin-top:1.2em;">Best</h4>
     <table class="table table-dark table-sm" style="max-width:640px;"><tbody>
         <tr><th>Score</th><td>{{ $e.Best.Score }}{{ if $e.Best.MaxScore }} / {{ call $num $e.Best.MaxScore }}{{ end }}</td></tr>

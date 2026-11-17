@@ -111,3 +111,18 @@ func TestApplyHiddenAndMatrix(t *testing.T) {
 		t.Fatalf("matrix: %+v", m)
 	}
 }
+
+func TestResolveAlias(t *testing.T) {
+	old := sarpConfig
+	defer func() { sarpConfig = old }()
+	sarpConfig.Team = []teamData{{ID: "T-42", Alias: "Falcons"}}
+	known := []string{"Falcons"}
+	for in, want := range map[string]string{"falcons": "Falcons", "T-42": "Falcons"} {
+		if got, ok := resolveAlias(in, known); !ok || got != want {
+			t.Errorf("resolveAlias(%q) = %q,%v want %q", in, got, ok, want)
+		}
+	}
+	if _, ok := resolveAlias("nope", known); ok {
+		t.Error("unknown alias accepted")
+	}
+}

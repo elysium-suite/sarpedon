@@ -4,7 +4,7 @@ package main
 //   - /community            one table: a row per image, a column per player, best score only
 //   - /community/detail     one player's submissions on one image
 //   - /community/lines      the per-image line-item tables (admin can delete a line)
-//   - /manage/community     admin: link Discord user <-> scoreboard id, remove non-image pictures
+//   - /manage/community     admin: link Discord user <-> scoreboard alias, remove non-image pictures
 // Admin choices live in Sarpedon's Mongo (the bot's feed is never edited): links in
 // community_links, removed pictures / deleted lines in community_hidden.
 
@@ -157,6 +157,9 @@ func linkMap(links []communityLink) map[string]string {
 	m := map[string]string{}
 	for _, l := range links {
 		m[l.Discord] = l.Team
+		if a := aliasFor(l.Team); a != "" { // links saved earlier as an id show as the alias
+			m[l.Discord] = a
+		}
 	}
 	return m
 }
@@ -264,17 +267,8 @@ func viewManageCommunity(c *gin.Context) {
 		}
 	}
 	sort.Strings(users)
-	teams := []string{}
-	if scores, e := getTop(); e == nil {
-		seenT := map[string]bool{}
-		for _, s := range scores {
-			if id := s.Team.ID; id != "" && !seenT[id] {
-				seenT[id], teams = true, append(teams, id)
-			}
-		}
-		sort.Strings(teams)
-	}
-	data["pics"], data["users"], data["teams"] = pics, users, teams
+	data["teams"] = knownAliases()
+	data["pics"], data["users"] = pics, users
 	c.HTML(http.StatusOK, "manage_community.html", pageData(c, "Community admin", data))
 }
 
@@ -282,11 +276,54 @@ func communityBack(c *gin.Context, dest, msg string) {
 	c.Redirect(http.StatusSeeOther, dest+"?msg="+url.QueryEscape(msg))
 }
 
+// knownAliases: team aliases (from sarpedon.conf and the live scores), sorted; used to pick the scoreboard side of a link.
+func knownAliases() []string {
+	seen, out := map[string]bool{}, []string{}
+	add := func(a string) {
+		if a != "" && !seen[strings.ToLower(a)] {
+			seen[strings.ToLower(a)] = true
+			out = append(out, a)
+		}
+	}
+	for _, t := range sarpConfig.Team {
+		add(t.Alias)
+	}
+	if scores, e := getTop(); e == nil {
+		for _, s := range scores {
+			add(s.Team.Alias)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return strings.ToLower(out[i]) < strings.ToLower(out[j]) })
+	return out
+}
+
+// resolveAlias maps what the admin typed to a canonical alias: an alias (any case) is kept, a team id is
+// converted to its alias. ok is false when it matches neither.
+func resolveAlias(in string, known []string) (string, bool) {
+	for _, a := range known {
+		if strings.EqualFold(a, in) {
+			return a, true
+		}
+	}
+	if a := aliasFor(in); a != "" {
+		return a, true
+	}
+	return "", false
+}
+
 func manageCommunityLink(c *gin.Context) {
 	d, t := strings.TrimSpace(c.PostForm("discord")), strings.TrimSpace(c.PostForm("team"))
 	if d == "" {
 		communityBack(c, "/manage/community", "Discord user is required")
 		return
+	}
+	if t != "" {
+		a, ok := resolveAlias(t, knownAliases())
+		if !ok {
+			communityBack(c, "/manage/community", "unknown scoreboard alias: "+t)
+			return
+		}
+		t = a
 	}
 	if err := setCommunityLink(d, t); err != nil {
 		communityBack(c, "/manage/community", "could not save: "+err.Error())
