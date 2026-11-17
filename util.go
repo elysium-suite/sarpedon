@@ -44,7 +44,13 @@ func getTeam(teamProp string) teamData {
 			return team
 		}
 	}
-	return teamData{}
+
+	if sarpConfig.AllowNewTeam == true {
+		team := createNewTeamId(teamProp)
+		return team
+	} else {
+		return teamData{}
+	}
 }
 
 func getImage(imageName string) imageData {

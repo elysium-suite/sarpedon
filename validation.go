@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -36,6 +37,7 @@ func validateUpdate(plainUpdate string) error {
 	splitUpdate = splitUpdate[:updateLen]
 
 	for _, item := range splitUpdate {
+		fmt.Println("item [", item, "]")
 		if !validateString(item) {
 			return errors.New("String validation failed for " + item)
 		}
@@ -115,6 +117,21 @@ func validateTeam(teamName string) bool {
 			return true
 		}
 	}
+
+	if sarpConfig.AllowNewTeam == true {
+		createNewTeamId(teamName)
+		return true
+	} else {
+		return false
+	}
+}
+
+func validateTeamId(teamId string) bool {
+	for _, team := range sarpConfig.Team {
+		if team.ID == teamId {
+			return true
+		}
+	}
 	return false
 }
 
@@ -134,4 +151,12 @@ func validateImage(imageName string) bool {
 		}
 	}
 	return false
+}
+
+// createNewTeamId registers a team seen for the first time (only reached when allownewteam is set).
+func createNewTeamId(teamId string) teamData {
+	team := teamData{ID: teamId}
+	sarpConfig.Team = append(sarpConfig.Team, team)
+	updateConfig()
+	return team
 }
