@@ -3,38 +3,33 @@
 
 <div>
     <h2>Community Images</h2>
-    <p style="color: #aab3bd;">Score reports students post as screenshots in Discord #homework-submission. The bot reads each screenshot and flags
-    reports whose time or score looks off; a flag is only a heads-up, nobody is penalised automatically. Community scores don't count toward the leaderboard.</p>
+    <p style="color: #aab3bd;">Score reports students post as screenshots in Discord #homework-submission. Each cell is that player's best score on the image;
+    click it for their details. The bot flags reports whose time or score looks off; a flag is only a heads-up, nobody is penalised automatically.
+    Community scores don't count toward the leaderboard. <a href="/community/lines">Line items</a>{{ if .user }} &middot; <a href="/manage/community">Admin</a>{{ end }}</p>
     {{ if .err }}
     <div class="alert alert-dark">Community images are unavailable right now ({{ .err }}).</div>
-    {{ else if not .feed.Images }}
+    {{ else if not .matrix.Rows }}
     <p>No score reports submitted yet.</p>
     {{ else }}
-    {{ $dur := .dur }}{{ $num := .num }}
-    {{ range $img := .feed.Images }}
-    <h4 style="margin-top: 1.5em;">{{ $img.Image }}</h4>
+    {{ $links := .links }}
+    <div style="overflow-x: auto;">
     <table class="table table-dark table-sm">
         <thead><tr>
-            <th>#</th><th>Player</th><th>Team</th><th>Best score</th><th>Vulns</th><th>Time</th><th>Verdict</th><th>Latest</th><th>Subs</th><th>Screenshot</th>
+            <th>Image</th>
+            {{ range $u := .matrix.Users }}<th>{{ $u }}{{ with index $links $u }}<br><small style="color:#9aa0a6">{{ . }}</small>{{ end }}</th>{{ end }}
         </tr></thead>
         <tbody>
-        {{ range $e := $img.Entries }}
+        {{ range $row := .matrix.Rows }}
         <tr>
-            <td>{{ if $e.Rank }}{{ $e.Rank }}{{ else }}-{{ end }}</td>
-            <td>{{ $e.User }}</td>
-            <td>{{ if $e.Team }}{{ $e.Team }}{{ end }}</td>
-            <td>{{ $e.Best.Score }}{{ if $e.Best.MaxScore }} / {{ call $num $e.Best.MaxScore }}{{ end }}</td>
-            <td>{{ if $e.Best.FoundVulns }}{{ call $num $e.Best.FoundVulns }}{{ if $e.Best.TotalVulns }} / {{ call $num $e.Best.TotalVulns }}{{ end }}{{ end }}</td>
-            <td>{{ call $dur $e.Best.ElapsedSeconds }}</td>
-            <td title="{{ range $r := $e.Best.Reasons }}{{ $r }}; {{ end }}">{{ if eq $e.Best.Verdict "ok" }}✅ ok{{ else if eq $e.Best.Verdict "suspicious" }}⚠️ suspicious{{ else }}{{ $e.Best.Verdict }}{{ end }}</td>
-            <td>{{ $e.Latest.Score }}{{ if $e.Latest.ElapsedSeconds }} ({{ call $dur $e.Latest.ElapsedSeconds }}){{ end }}</td>
-            <td>{{ $e.Submissions }}</td>
-            <td>{{ if $e.Best.Thumb }}<a href="{{ $e.Best.Thumb }}" target="_blank"><img src="{{ $e.Best.Thumb }}" alt="score report" style="height: 48px; border-radius: 3px;"></a>{{ end }}</td>
+            <td>{{ $row.Image }}</td>
+            {{ range $i, $cell := $row.Cells }}
+            <td>{{ if $cell }}<a href="/community/detail?key={{ urlquery $row.Key }}&user={{ urlquery $cell.User }}">{{ $cell.Best.Score }}{{ if eq $cell.Best.Verdict "suspicious" }} ⚠️{{ end }}</a>{{ end }}</td>
+            {{ end }}
         </tr>
         {{ end }}
         </tbody>
     </table>
-    {{ end }}
+    </div>
     {{ end }}
     <br><br>
 </div>

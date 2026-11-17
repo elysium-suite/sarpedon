@@ -95,19 +95,6 @@ func communityInt(p *int) string {
 
 var communityHashRe = regexp.MustCompile(`^[0-9a-f]{64}$`)
 
-func viewCommunity(c *gin.Context) {
-	f, err := fetchCommunity()
-	data := gin.H{}
-	if err != nil {
-		data["err"] = err.Error()
-	} else {
-		data["feed"] = f
-	}
-	data["dur"] = communityDuration
-	data["num"] = communityInt
-	c.HTML(http.StatusOK, "community.html", pageData(c, "Community Images", data))
-}
-
 // viewCommunityImg proxies a screenshot thumbnail from the bot (which only listens on localhost).
 func viewCommunityImg(c *gin.Context) {
 	h := c.Param("hash")
