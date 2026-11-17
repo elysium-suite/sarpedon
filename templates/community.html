@@ -16,7 +16,7 @@
     <table class="table table-dark table-sm">
         <thead><tr>
             <th>Image</th>
-            {{ range $u := .matrix.Users }}<th>{{ $u }}{{ with index $links $u }}<br><small style="color:#9aa0a6">{{ . }}</small>{{ end }}</th>{{ end }}
+            {{ range $u := .matrix.Users }}<th>{{ with index $links $u }}{{ . }}{{ else }}{{ $u }}{{ end }}</th>{{ end }}
         </tr></thead>
         <tbody>
         {{ range $row := .matrix.Rows }}
