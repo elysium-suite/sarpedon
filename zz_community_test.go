@@ -61,10 +61,11 @@ func TestCommunityTemplateRenders(t *testing.T) {
 	old := sarpConfig.CommunityUrl
 	sarpConfig.CommunityUrl = srv.URL
 	defer func() { sarpConfig.CommunityUrl = old }()
-	oh, ol := hiddenLoader, linksLoader
+	oh, ol, on := hiddenLoader, linksLoader, namesLoader
+	namesLoader = func() map[string]string { return map[string]string{} }
 	hiddenLoader = func() communityHidden { return communityHidden{} }
 	linksLoader = func() []communityLink { return []communityLink{{Discord: "alice", Team: "T-42"}} }
-	defer func() { hiddenLoader, linksLoader = oh, ol }()
+	defer func() { hiddenLoader, linksLoader, namesLoader = oh, ol, on }()
 	r := gin.New()
 	r.SetFuncMap(template.FuncMap{"increment": func(n int) int { return n + 1 }, "local": localTime})
 	r.LoadHTMLGlob("templates/*")
@@ -124,5 +125,16 @@ func TestResolveAlias(t *testing.T) {
 	}
 	if _, ok := resolveAlias("nope", known); ok {
 		t.Error("unknown alias accepted")
+	}
+}
+
+func TestApplyNames(t *testing.T) {
+	f := &communityFeed{Images: []communityImage{{Image: "Very Long Name", Key: "k1"}, {Image: "Other", Key: "k2"}}}
+	out := applyNames(f, map[string]string{"k1": "Short"})
+	if out.Images[0].Image != "Short" || out.Images[1].Image != "Other" || out.Images[0].Key != "k1" {
+		t.Fatalf("got %+v", out.Images)
+	}
+	if f.Images[0].Image != "Very Long Name" {
+		t.Fatal("input mutated")
 	}
 }

@@ -23,6 +23,20 @@
     </tbody>
   </table>
 
+  <h4 style="margin-top:28px">Short image names</h4>
+  <p style="color:#aab3bd;">Give a long image name a shorter one; it is shown on the Community pages instead. Blank restores the original.</p>
+  <table class="table table-dark table-sm" style="max-width:900px;">
+    <thead><tr><th>Original name</th><th>Short name</th></tr></thead>
+    <tbody>
+    {{ range .imgs }}<tr><td style="word-break:break-all">{{ .Full }}</td>
+      <td><form method="POST" action="/manage/community/name" class="form-inline" style="gap:6px">
+        <input type="hidden" name="key" value="{{ .Key }}">
+        <input class="form-control form-control-sm" name="name" value="{{ .Short }}" maxlength="60" placeholder="short name">
+        <button class="btn btn-sm btn-primary">Save</button></form></td></tr>
+    {{ else }}<tr><td colspan="2" style="color:#9aa0a6">No images yet.</td></tr>{{ end }}
+    </tbody>
+  </table>
+
   <h4 style="margin-top:28px">Pictures</h4>
   <p style="color:#aab3bd;">Remove anything that is not really a score report. A removed picture disappears from every page (a player whose only picture is removed drops off).</p>
   <div style="display:flex; flex-wrap:wrap; gap:12px;">

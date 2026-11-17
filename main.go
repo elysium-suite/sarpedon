@@ -100,6 +100,7 @@ func main() {
 		authRoutes.GET("/manage/review", viewReview)
 		authRoutes.GET("/manage/community", viewManageCommunity)
 		authRoutes.POST("/manage/community/link", manageCommunityLink)
+		authRoutes.POST("/manage/community/name", manageCommunityName)
 		authRoutes.POST("/manage/community/pic/remove", manageCommunityRemovePic)
 		authRoutes.POST("/community/line/delete", manageCommunityDeleteLine)
 		authRoutes.GET("/manage/ai", viewAIFlags)

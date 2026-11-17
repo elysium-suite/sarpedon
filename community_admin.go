@@ -176,12 +176,61 @@ func setCommunityLink(discord, team string) error {
 	return err
 }
 
+// ---- short image names ----
+
+// loadCommunityNames returns admin-chosen short names keyed by image key.
+func loadCommunityNames() map[string]string {
+	m := map[string]string{}
+	initDatabase()
+	cur, err := mongoClient.Database(dbName).Collection("community_names").Find(context.TODO(), bson.D{})
+	if err != nil {
+		return m
+	}
+	var docs []struct {
+		Key  string `bson:"key"`
+		Name string `bson:"name"`
+	}
+	if cur.All(context.TODO(), &docs) != nil {
+		return m
+	}
+	for _, d := range docs {
+		m[d.Key] = d.Name
+	}
+	return m
+}
+
+// setCommunityName saves a short name for an image key; blank removes it.
+func setCommunityName(key, name string) error {
+	initDatabase()
+	coll := mongoClient.Database(dbName).Collection("community_names")
+	if name == "" {
+		_, err := coll.DeleteOne(context.TODO(), bson.D{{"key", key}})
+		return err
+	}
+	_, err := coll.UpdateOne(context.TODO(), bson.D{{"key", key}},
+		bson.D{{"$set", bson.D{{"key", key}, {"name", name}}}}, options.Update().SetUpsert(true))
+	return err
+}
+
+// applyNames swaps in the short name for every image that has one (keys are unchanged).
+func applyNames(f *communityFeed, names map[string]string) *communityFeed {
+	out := &communityFeed{Generated: f.Generated, Images: make([]communityImage, len(f.Images))}
+	copy(out.Images, f.Images)
+	for i := range out.Images {
+		if n := names[out.Images[i].Key]; n != "" {
+			out.Images[i].Image = n
+		}
+	}
+	return out
+}
+
 // ---- views ----
 
 // stubbed in tests (no Mongo there)
 var (
 	hiddenLoader = loadCommunityHidden
 	linksLoader  = loadCommunityLinks
+	namesLoader  = loadCommunityNames
 )
 
 func communityVisible() (*communityFeed, error) {
@@ -189,7 +238,7 @@ func communityVisible() (*communityFeed, error) {
 	if err != nil {
 		return nil, err
 	}
-	return applyHidden(f, hiddenLoader()), nil
+	return applyNames(applyHidden(f, hiddenLoader()), namesLoader()), nil
 }
 
 func communityData(f *communityFeed, err error) gin.H {
@@ -246,6 +295,15 @@ func viewManageCommunity(c *gin.Context) {
 	h := loadCommunityHidden()
 	data["msg"] = c.Query("msg")
 	data["links"] = loadCommunityLinks()
+	names := loadCommunityNames()
+	type imgName struct{ Key, Full, Short string }
+	imgs := []imgName{}
+	if err == nil {
+		for _, img := range f.Images {
+			imgs = append(imgs, imgName{img.Key, img.Image, names[img.Key]})
+		}
+	}
+	data["imgs"] = imgs
 	// pictures still showing (deduped by hash) and Discord users seen in the feed
 	type pic struct{ Hash, Image, User string }
 	pics, users, hashes := []pic{}, []string{}, map[string]bool{}
@@ -356,4 +414,17 @@ func manageCommunityDeleteLine(c *gin.Context) {
 		return
 	}
 	communityBack(c, "/community/lines", "deleted "+user)
+}
+
+func manageCommunityName(c *gin.Context) {
+	key, name := strings.TrimSpace(c.PostForm("key")), strings.TrimSpace(c.PostForm("name"))
+	if key == "" {
+		communityBack(c, "/manage/community", "missing image")
+		return
+	}
+	if err := setCommunityName(key, name); err != nil {
+		communityBack(c, "/manage/community", "could not save: "+err.Error())
+		return
+	}
+	communityBack(c, "/manage/community", "saved short name")
 }
