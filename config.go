@@ -28,6 +28,7 @@ type config struct {
 	Enforce       bool
 	Timeout       int
 	LevelsvcUrl   string   // base URL of the levelsvc competition engine (default http://127.0.0.1:8099)
+	CommunityUrl  string   // base URL of the turtlebot community-image feed (default http://127.0.0.1:8098); the "Community images" page
 	LevelsvcToken string   // levelsvc admin token, for the creator web pages
 	SprintMS      []string // Weekly Sprint: team aliases in the Middle School division (everyone else is High School); empty = built-in default
 	Release       []releaseData // Weekly Sprint: per-practice answer-key release times (by comp ID). Before a practice's release, its Windows/Linux points count x2 (see practice.go applySprintBonus).

@@ -60,6 +60,8 @@ func main() {
 		})
 		routes.GET("/", viewScoreboard)
 		routes.GET("/announcements", viewAnnounce)
+	routes.GET("/community", viewCommunity)
+		routes.GET("/community/img/:hash", viewCommunityImg)
 	routes.GET("/practice", viewPractice)
 	routes.GET("/practice.json", viewPracticeJSON) // for the Discord bot
 	routes.GET("/practice/:comp", viewPracticeComp)
