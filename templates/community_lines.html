@@ -28,7 +28,7 @@
             <td>{{ $e.Best.Score }}{{ if $e.Best.MaxScore }} / {{ call $num $e.Best.MaxScore }}{{ end }}</td>
             <td>{{ if $e.Best.FoundVulns }}{{ call $num $e.Best.FoundVulns }}{{ if $e.Best.TotalVulns }} / {{ call $num $e.Best.TotalVulns }}{{ end }}{{ end }}</td>
             <td>{{ call $dur $e.Best.ElapsedSeconds }}</td>
-            <td title="{{ range $r := $e.Best.Reasons }}{{ $r }}; {{ end }}">{{ if eq $e.Best.Verdict "ok" }}✅ ok{{ else if eq $e.Best.Verdict "suspicious" }}⚠️ suspicious{{ else }}{{ $e.Best.Verdict }}{{ end }}</td>
+            <td title="{{ range $r := $e.Best.Reasons }}{{ $r }}; {{ end }}">{{ if eq $e.Best.Verdict "ok" }}✅ ok{{ else }}{{ $e.Best.Verdict }}{{ end }}</td>
             <td>{{ $e.Latest.Score }}{{ if $e.Latest.ElapsedSeconds }} ({{ call $dur $e.Latest.ElapsedSeconds }}){{ end }}</td>
             <td>{{ $e.Submissions }}</td>
             <td>{{ if $e.Best.Thumb }}<a href="{{ $e.Best.Thumb }}" target="_blank"><img src="{{ $e.Best.Thumb }}" alt="score report" style="height: 48px; border-radius: 3px;"></a>{{ end }}</td>

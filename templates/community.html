@@ -23,7 +23,7 @@
         <tr>
             <td>{{ $row.Image }}</td>
             {{ range $i, $cell := $row.Cells }}
-            <td>{{ if $cell }}<a href="/community/detail?key={{ urlquery $row.Key }}&user={{ urlquery $cell.User }}">{{ $cell.Best.Score }}{{ if eq $cell.Best.Verdict "suspicious" }} ⚠️{{ end }}</a>{{ end }}</td>
+            <td>{{ if $cell }}<a href="/community/detail?key={{ urlquery $row.Key }}&user={{ urlquery $cell.User }}">{{ $cell.Best.Score }}</a>{{ end }}</td>
             {{ end }}
         </tr>
         {{ end }}
