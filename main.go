@@ -6,15 +6,20 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 var (
+	imageStatus = struct {
+		sync.RWMutex
+		m map[string]map[string]gin.H
+	}{m: make(map[string]map[string]gin.H)}
 	sarpConfig          = config{}
-	sarpShells          = make(map[string]map[string]*imageShell)
 	debugEnabled        = false
 	acceptingScores     = true
 	alternateCompletion = false
@@ -23,10 +28,10 @@ var (
 
 func init() {
 	flag.BoolVar(&debugEnabled, "d", false, "Print verbose debug information")
-	flag.Parse()
 }
 
 func main() {
+	flag.Parse() // parse here, not in init(), so `go test`'s own flags don't collide
 	readConfig(&sarpConfig)
 	checkConfig()
 
@@ -39,6 +44,8 @@ func main() {
 		"increment": func(num int) int {
 			return num + 1
 		},
+		// local converts a timestamp to the configured timezone for display
+		"local": localTime,
 	})
 
 	r.LoadHTMLGlob("templates/*")
@@ -53,14 +60,16 @@ func main() {
 		})
 		routes.GET("/", viewScoreboard)
 		routes.GET("/announcements", viewAnnounce)
+	routes.GET("/practice", viewPractice)
+	routes.GET("/practice.json", viewPracticeJSON) // for the Discord bot
+	routes.GET("/practice/:comp", viewPracticeComp)
+	routes.GET("/sprint", viewSprint)
 		routes.GET("/status/:id/:image", getStatus)
 		routes.POST("/login", login)
 		routes.POST("/update", scoreUpdate)
 		routes.GET("/team/:team", viewTeam)
 		routes.GET("/image/:image", viewImage)
 		routes.GET("/team/:team/image/:image", viewTeamImage)
-		routes.GET("/shell/:id/:image/clientInput", shellClientInput)
-		routes.GET("/shell/:id/:image/clientOutput", shellClientOutput)
 	}
 
 	authRoutes := routes.Group("/")
@@ -69,16 +78,38 @@ func main() {
 		authRoutes.GET("/logout", logout)
 		authRoutes.GET("/settings", viewSettings)
 		authRoutes.POST("/settings", changeSettings)
+		authRoutes.GET("/monitor", viewMonitor)
+		authRoutes.GET("/monitor/ip/:ip", viewMonitorIP)
 		authRoutes.GET("/export", exportCsv)
-		authRoutes.GET("/shell/:id/:image", getShell)
-		authRoutes.GET("/shell/:id/:image/serverInput", shellServerInput)
-		authRoutes.GET("/shell/:id/:image/serverOutput", shellServerOutput)
+		// test-creator competition console (drives levelsvc)
+		authRoutes.GET("/manage", viewManage)
+		authRoutes.POST("/manage/action", manageAction)
+		authRoutes.GET("/manage/score", viewSetScore)
+		authRoutes.POST("/manage/score", manageSetScore)
+		authRoutes.POST("/manage/score/remove", manageRemoveManualScore)
+		authRoutes.GET("/manage/new", viewManageNew)
+		authRoutes.POST("/manage/new", manageCreate)
+		authRoutes.GET("/manage/edit", viewManageEdit)
+		authRoutes.POST("/manage/edit", manageUpdate)
+		authRoutes.GET("/manage/agent", viewAgent)
+		authRoutes.POST("/manage/agent", manageAgentPublish)
+		authRoutes.GET("/manage/review", viewReview)
+		authRoutes.GET("/manage/ai", viewAIFlags)
+		authRoutes.POST("/manage/ai/clear", manageAIClear)
+		authRoutes.GET("/manage/download", manageDownload)
+		authRoutes.POST("/manage/restore", manageRestore)
 	}
 
 	fmt.Println("Initializing scoreboard data...")
 	initScoreboard()
 
-	r.Run(":4013")
+	s := &http.Server{
+		Addr:         ":4013", // Listening port
+		Handler:      r,
+		ReadTimeout:  time.Duration(sarpConfig.Timeout) * time.Second,
+		WriteTimeout: time.Duration(sarpConfig.Timeout) * time.Second,
+	}
+	s.ListenAndServe()
 }
 
 func viewScoreboard(c *gin.Context) {
@@ -86,6 +117,7 @@ func viewScoreboard(c *gin.Context) {
 	if err != nil {
 		panic(err)
 	}
+	teamScores, _ = splitPractice(teamScores) // practice levels don't count toward the leaderboard
 	teamData, err := parseScoresIntoTeams(teamScores)
 	if err != nil {
 		panic(err)
@@ -121,8 +153,8 @@ func viewTeam(c *gin.Context) {
 		errorOutGraceful(c, errors.New("Invalid team name: "+teamName))
 		return
 	}
-	teamScore := getScore(teamName, "")
-	if len(teamScore) <= 0 {
+	teamScore, practiceEntries := splitPractice(getScore(teamName, ""))
+	if len(teamScore) <= 0 && len(practiceEntries) <= 0 {
 		errorOutGraceful(c, errors.New("Team doesn't have any image data"))
 		return
 	}
@@ -138,10 +170,30 @@ func viewTeam(c *gin.Context) {
 		errorOutGraceful(c, errors.New("Parsing team scores failed"))
 		return
 	}
+	if teamData.Alias == "" { // a team with practice levels only
+		teamData.Alias = teamName
+		if len(practiceEntries) > 0 {
+			teamData.Alias = practiceEntries[0].Team.Alias
+		}
+	}
+	practice, practiceErr := []compProgress(nil), ""
+	practiceTL := map[string]string{}
+	practiceVulns := map[string][]levelVulnView{}
+	if len(practiceEntries) > 0 {
+		practice, practiceErr = teamPractice(teamData.Alias)
+		practiceTL = teamTimelines(teamData.Alias, practice)
+		if getUser(c) != "" { // admin only: the not-fixed list is an answer key
+			if sc, err := practiceScores(); err == nil {
+				practiceVulns = practiceVulnViews(teamData.Alias, practice, sc)
+			}
+		}
+	}
 	allRecords := getAll(teamName, "")
 	imageCopies := []imageData{}
 	for _, image := range sarpConfig.Image {
-		imageCopies = append(imageCopies, image)
+		if !image.Practice { // practice levels live in the Practice section, not the chart
+			imageCopies = append(imageCopies, image)
+		}
 	}
 	images, labels := consolidateRecords(allRecords, imageCopies)
 	for index := range images {
@@ -170,7 +222,8 @@ func viewTeam(c *gin.Context) {
 		}
 	}
 
-	c.HTML(http.StatusOK, "detail.html", pageData(c, "Scoreboard for "+teamName, gin.H{"data": teamScore, "team": teamData, "labels": labels, "images": images}))
+	c.HTML(http.StatusOK, "detail.html", pageData(c, "Scoreboard for "+teamName, gin.H{"data": teamScore, "team": teamData, "labels": labels, "images": images, "tz": sarpConfig.Timezone,
+		"practice": practice, "practiceErr": practiceErr, "practiceTL": practiceTL, "practiceVulns": practiceVulns}))
 }
 
 func exportCsv(c *gin.Context) {
@@ -220,58 +273,79 @@ func viewTeamImage(c *gin.Context) {
 		}
 	}
 
-	c.HTML(http.StatusOK, "detail.html", pageData(c, "Scoreboard for "+teamName, gin.H{"data": teamScore, "team": teamData, "labels": labels, "images": images, "imageFilter": getImage(imageName)}))
+	c.HTML(http.StatusOK, "detail.html", pageData(c, "Scoreboard for "+teamName, gin.H{"data": teamScore, "team": teamData, "labels": labels, "images": images, "tz": sarpConfig.Timezone, "imageFilter": getImage(imageName)}))
 }
 
 func getStatus(c *gin.Context) {
-	image, err := initShell(c)
+	id, image, err := validateReq(c)
 	if err != nil {
+		// The team ID (or image) is not recognized -- this is what a box
+		// booted without a valid TeamID.txt looks like. Record it so admins
+		// can monitor images being worked without a real team ID.
+		if rErr := recordUnregistered(clientIP(c), c.Param("image"), c.Param("id")); rErr != nil {
+			fmt.Println("Error recording unregistered status check:", rErr)
+		}
 		errorOut(c, err)
 		return
 	}
-	if image.Waiting {
-		c.JSON(200, gin.H{"status": "GIMMESHELL"})
-		return
-	}
-	imageName := c.Param("image")
-	teamID := c.Param("id")
-	// Already checked for being a valid time on startup.
-	if sarpConfig.PlayTime != "" {
 
+	if sarpConfig.PlayTime != "" {
 		playTimeLimit, _ := time.ParseDuration(sarpConfig.PlayTime)
 		recentRecord, err := getLastScore(&scoreEntry{
-			Image: getImage(imageName),
-			Team:  getTeam(teamID),
+			Team:  getTeam(id),
+			Image: getImage(image),
 		})
-		if err == nil && recentRecord.PlayTime > playTimeLimit {
+		// Send kill signal if they're over play time limit
+		if err == nil && recentRecord.PlayTime > playTimeLimit && sarpConfig.Enforce {
 			c.JSON(200, gin.H{"status": "DIE"})
 			return
 		}
 	}
-	c.JSON(200, gin.H{"status": "OK"})
-}
 
-func getShell(c *gin.Context) {
-	image, err := initShell(c)
-	if err != nil {
-		errorOutGraceful(c, err)
+	if !acceptingScores {
+		c.JSON(400, gin.H{"status": "DISABLED"})
 		return
 	}
-	teamID := c.Param("id")
-	imageName := c.Param("image")
-	if image.Active == true {
-		c.HTML(http.StatusOK, "shell.html", pageData(c, "shell", gin.H{"team": getTeam(teamID), "image": getImage(imageName), "error": "Shell is currently in use!"}))
+
+	imageStatus.Lock()
+	defer imageStatus.Unlock()
+	if v, ok := imageStatus.m[id][image]; ok {
+		// Delete existing key
+		delete(imageStatus.m[id], image)
+		c.JSON(200, v)
 		return
 	}
-	refreshShell(teamID, imageName, image)
-	fmt.Println("*****************")
-	fmt.Println("IMAGE ACTIVE FOR", image, "is", image.Active)
-	fmt.Println("*****************")
-	c.HTML(http.StatusOK, "shell.html", pageData(c, "shell", gin.H{"team": getTeam(teamID), "image": getImage(imageName)}))
+	c.JSON(200, gin.H{"status": "OK"})
 }
 
 func viewSettings(c *gin.Context) {
 	c.HTML(http.StatusOK, "settings.html", pageData(c, "settings", gin.H{"scoring": acceptingScores}))
+}
+
+// viewMonitor is an admin-only page showing the source IP of every team/image
+// that has reported a score (registered connections), plus every status check
+// that arrived without a valid team ID (unregistered activity).
+func viewMonitor(c *gin.Context) {
+	connections, err := getTop()
+	if err != nil {
+		connections = []scoreEntry{}
+		fmt.Println("Error retrieving connections for monitor:", err)
+	}
+	loc, _ := time.LoadLocation(sarpConfig.Timezone)
+	for i := range connections {
+		connections[i].Time = connections[i].Time.In(loc)
+	}
+	sort.SliceStable(connections, func(i, j int) bool {
+		return connections[i].Time.After(connections[j].Time)
+	})
+
+	unreg, err := getUnregistered()
+	if err != nil {
+		unreg = []unregEntry{}
+		fmt.Println("Error retrieving unregistered activity:", err)
+	}
+
+	c.HTML(http.StatusOK, "monitor.html", pageData(c, "monitor", gin.H{"connections": connections, "unregistered": unreg}))
 }
 
 func viewAnnounce(c *gin.Context) {
@@ -285,15 +359,16 @@ func viewAnnounce(c *gin.Context) {
 
 func scoreUpdate(c *gin.Context) {
 	if !acceptingScores {
-		c.JSON(200, gin.H{"status": "DISABLED"})
+		c.JSON(400, gin.H{"status": "DISABLED"})
 		return
 	}
 
 	c.Request.ParseForm()
 	cryptUpdate := c.Request.Form.Get("update")
-	newScore, err := parseUpdate(cryptUpdate)
+	newScore, err := parseUpdate(cryptUpdate, clientIP(c))
 	if err != nil {
 		errorOut(c, err)
+		fmt.Println("Error decrypting update-- maybe your password is wrong?")
 		return
 	}
 
@@ -315,30 +390,34 @@ func changeSettings(c *gin.Context) {
 	c.Request.ParseForm()
 	settingType := c.Request.Form.Get("settingType")
 
+	var err error
+	var msg string
 	if settingType == "announcement" {
 		announceTitle := c.Request.Form.Get("title")
 		announceBody := c.Request.Form.Get("body")
 		loc, _ := time.LoadLocation(sarpConfig.Timezone)
 		postToDiscord("**" + announceTitle + "**\n" + announceBody)
 		insertAnnouncement(&announcement{time.Now().In(loc), announceTitle, announceBody})
-
+		msg = "Successfully announced!"
 	} else if settingType == "toggleScoring" {
 		acceptingScores = !acceptingScores
 
 	} else if settingType == "wipeDatabase" {
-		err := wipeDatabase()
+		err = wipeDatabase()
 		if err != nil {
 			fmt.Println("Error wiping database", err)
 		}
+		msg = "Successfully wiped database!"
 
 	} else if settingType == "disableTestingID" {
-		err := clearTeamScore("testing_id")
+		err = clearTeamScore("testing_id")
 		if err != nil {
 			fmt.Println("Error clearing testing_id results", err)
 		}
+		msg = "Cleared data for testing_id."
 	}
 
-	c.HTML(http.StatusOK, "settings.html", pageData(c, "settings", gin.H{"scoring": acceptingScores}))
+	c.HTML(http.StatusOK, "settings.html", pageData(c, "settings", gin.H{"scoring": acceptingScores, "msg": msg, "err": err}))
 }
 
 func pageData(c *gin.Context, title string, ginMap gin.H) gin.H {

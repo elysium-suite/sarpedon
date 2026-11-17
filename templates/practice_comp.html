@@ -1,0 +1,80 @@
+{{ template "head.html" . }}
+{{ template "nav.html" . }}
+{{ template "practice_style.html" }}
+
+<div>
+    {{ if .err }}
+    <h2>Practice</h2>
+    <div class="alert alert-dark">Practice is unavailable right now ({{ .err }}).</div>
+    {{ else }}
+    {{ $levels := .comp.Levels }}
+    <h2>{{ .comp.Name }}</h2>
+    <p class="pc-sub">
+        <a href="/practice?cat={{ .cat.Key }}">&larr; {{ .cat.Name }} practice</a>{{ if .comp.Unit }} &middot; Unit {{ .comp.Unit }}{{ end }} &middot; {{ len $levels }} level{{ if ne (len $levels) 1 }}s{{ end }}.
+        Each cell is {{ .cat.Cell }}; &#10003; = cleared.
+    </p>
+    {{ if .user }}<p><a class="btn btn-primary" href="/manage/score?comp={{ .comp.ID }}">Set / add a score for a student</a></p>{{ end }}
+    <ol class="pc-levels">
+        {{ range $l := $levels }}<li value="{{ $l.Level }}">{{ $l.Name }}</li>{{ end }}
+    </ol>
+
+    {{ if .rows }}
+    <div class="table-responsive">
+        <table class="table table-borderless table-dark table-hover pc-grid">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Team</th>
+                    <th>Cleared</th>
+                    {{ range $l := $levels }}<th class="pc-ch" title="{{ $l.Name }}">L{{ $l.Level }}</th>{{ end }}
+                </tr>
+            </thead>
+            <tbody>
+                {{ range $r := .rows }}
+                <tr>
+                    <td><a href="/team/{{ $r.Team }}">{{ $r.Team }}</a>{{ if $.user }} <a href="/manage/score?comp={{ $.comp.ID }}&team={{ $r.Team }}" title="Set this team's score">[set score]</a>{{ end }}</td>
+                    <td>{{ $r.ProgStr }} / {{ len $levels }}</td>
+                    {{ range $i, $cell := $r.Cells }}<td class="pc-cell {{ $cell.Class }}" title="{{ (index $levels $i).Name }}">{{ if $cell.Started }}{{ $cell.Pct }}%{{ if $cell.Cleared }} &#10003;{{ end }}{{ else }}&ndash;{{ end }}</td>{{ end }}
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+    </div>
+    {{ else }}
+    <p>No team has started this practice yet.</p>
+    {{ end }}
+
+    {{ if $.user }}
+    {{ range $r := .rows }}
+        {{ $tv := index $.teamVulns $r.Team }}
+        {{ if $tv }}
+        <details class="pc-tl pc-vd">
+            <summary>{{ $r.Team }}: vulnerabilities (admin)</summary>
+            {{ range $lv := $tv }}
+            <div class="pc-vd-h">{{ $lv.Name }} &middot; {{ $lv.Found }}/{{ $lv.Total }} fixed</div>
+            <ul class="pc-vd-list">
+                {{ range $v := $lv.Vulns }}
+                {{ if $v.Penalty }}<li class="{{ if $v.Found }}pc-v-pen{{ else }}pc-v-nopen{{ end }}">{{ if $v.Found }}&#9888; penalty incurred{{ else }}&#10003; no penalty{{ end }} &mdash; {{ $v.Message }} ({{ $v.Points }})</li>
+                {{ else }}<li class="{{ if $v.Found }}pc-v-ok{{ else }}pc-v-miss{{ end }}">{{ if $v.Found }}&#10003; fixed{{ else }}&#10007; not fixed{{ end }} &mdash; {{ $v.Message }} ({{ $v.Points }})</li>{{ end }}
+                {{ end }}
+            </ul>
+            {{ end }}
+        </details>
+        {{ end }}
+    {{ end }}
+    {{ end }}
+
+    {{ if .timeline }}
+    <h4 style="margin-top: 1.5rem;">Progress over time</h4>
+    <p class="pc-sub">
+        Each line is a team's completion of this module (the average of its levels).
+        {{ if gt .timelineTeams (len .timeline) }}Showing the {{ len .timeline }} teams furthest along, of {{ .timelineTeams }}.{{ end }}
+    </p>
+    <div id="pc-module-timeline" style="height: 340px;"></div>
+    {{ template "practice_chart.html" }}
+    <script>pcTimeline(document.getElementById("pc-module-timeline"), {{ .timeline }});</script>
+    {{ end }}
+    {{ end }}
+    <br><br>
+</div>
+
+{{ template "feet.html" }}

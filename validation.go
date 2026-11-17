@@ -5,19 +5,36 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
+const (
+	updateLen = 10
+)
+
+// legacyDelimiter is what aeacus 1.8.x puts between the fields of an update (2.x uses `delimiter`).
+const legacyDelimiter = "|-S#-|"
+
+// updateDelimiter picks the delimiter a decrypted update or vuln list was built with: the 2.x one
+// when it is there, else the 1.8.x one, so images built with either aeacus score.
+func updateDelimiter(plain string) string {
+	if !strings.Contains(plain, delimiter) && strings.Contains(plain, legacyDelimiter) {
+		return legacyDelimiter
+	}
+	return delimiter
+}
+
 func validateUpdate(plainUpdate string) error {
-	splitUpdate := strings.Split(plainUpdate, delimiter)
-
-	fmt.Println("Validate update", plainUpdate)
-
-	if len(splitUpdate) > 14 {
-		splitUpdate = splitUpdate[:14]
+	d := updateDelimiter(plainUpdate)
+	splitUpdate := strings.Split(plainUpdate, d)
+	if d == legacyDelimiter {
+		return validateLegacyUpdate(splitUpdate)
 	}
-	if len(splitUpdate) > 12 {
-		splitUpdate = splitUpdate[:12]
+	if len(splitUpdate) < updateLen {
+		return errors.New("Malformed update")
 	}
+	splitUpdate = splitUpdate[:updateLen]
 
 	for _, item := range splitUpdate {
 		fmt.Println("item [", item, "]")
@@ -26,14 +43,8 @@ func validateUpdate(plainUpdate string) error {
 		}
 	}
 
-	if len(splitUpdate) == 14 {
-		if !validateTeamIdAndAlias(splitUpdate[1], splitUpdate[13]) {
-			return errors.New("Invalid team specified")
-		}
-	} else {
-		if splitUpdate[0] != "team" || !validateTeam(splitUpdate[1]) {
-			return errors.New("Invalid team specified")
-		}
+	if splitUpdate[0] != "team" || !validateTeamByID(splitUpdate[1]) {
+		return errors.New("Invalid team specified")
 	}
 
 	if splitUpdate[2] != "image" || !validateImage(splitUpdate[3]) {
@@ -43,11 +54,56 @@ func validateUpdate(plainUpdate string) error {
 	return nil
 }
 
+// validateLegacyUpdate checks an aeacus 1.8.x update: team, image, score, challenge, vulns, time
+// as key/value pairs. The challenge value is never used, so it is not checked.
+func validateLegacyUpdate(split []string) error {
+	fields := legacyFields(split)
+	for _, k := range []string{"team", "image", "score", "vulns", "time"} {
+		v, ok := fields[k]
+		if !ok {
+			return errors.New("Malformed update")
+		}
+		if !validateString(v) {
+			return errors.New("String validation failed for " + v)
+		}
+	}
+	if !validateTeamByID(fields["team"]) {
+		return errors.New("Invalid team specified")
+	}
+	if !validateImage(fields["image"]) {
+		return errors.New("Invalid image specified")
+	}
+	return nil
+}
+
+// legacyFields reads the key/value pairs of an update split on its delimiter.
+func legacyFields(split []string) map[string]string {
+	fields := make(map[string]string)
+	for i := 0; i+1 < len(split); i += 2 {
+		fields[split[i]] = split[i+1]
+	}
+	return fields
+}
+
+func validateReq(c *gin.Context) (string, string, error) {
+	teamID := c.Param("id")
+	if !validateTeam(teamID) {
+		err := errors.New("Invalid team id: " + teamID)
+		return "", "", err
+	}
+	imageName := c.Param("image")
+	if !validateImage(imageName) {
+		err := errors.New("Invalid image name: " + imageName)
+		return "", "", err
+	}
+	return teamID, imageName, nil
+}
+
 func validateString(input string) bool {
 	if input == "" {
 		return false
 	}
-	validationString := `^[a-zA-Z0-9-_]+$`
+	validationString := `^[a-zA-Z0-9-_ ]+$`
 	inputValidation := regexp.MustCompile(validationString)
 	return inputValidation.MatchString(input)
 }
@@ -79,37 +135,13 @@ func validateTeamId(teamId string) bool {
 	return false
 }
 
-func validateTeamIdAndAlias(teamId string, teamAlias string) bool {
+func validateTeamByID(teamName string) bool {
 	for _, team := range sarpConfig.Team {
-		if team.ID == teamId {
-			if team.Alias == teamAlias {
-				return true
-			} else {
-				return false
-			}
+		if team.ID == teamName {
+			return true
 		}
 	}
-
-	if sarpConfig.AllowNewTeam == true {
-		createNewTeam(teamId, teamAlias)
-		return true
-	} else {
-		return false
-	}
-}
-
-func createNewTeam(teamId string, teamAlias string) teamData {
-	team := teamData{ID: teamId, Alias: teamAlias}
-	sarpConfig.Team = append(sarpConfig.Team, team)
-	updateConfig()
-	return team
-}
-
-func createNewTeamId(teamId string) teamData {
-	team := teamData{ID: teamId}
-	sarpConfig.Team = append(sarpConfig.Team, team)
-	updateConfig()
-	return team
+	return false
 }
 
 func validateImage(imageName string) bool {
@@ -119,4 +151,12 @@ func validateImage(imageName string) bool {
 		}
 	}
 	return false
+}
+
+// createNewTeamId registers a team seen for the first time (only reached when allownewteam is set).
+func createNewTeamId(teamId string) teamData {
+	team := teamData{ID: teamId}
+	sarpConfig.Team = append(sarpConfig.Team, team)
+	updateConfig()
+	return team
 }

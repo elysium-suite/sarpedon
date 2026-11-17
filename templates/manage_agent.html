@@ -1,0 +1,47 @@
+{{ template "head.html" . }}
+{{ template "nav.html" . }}
+<style>
+  .step { border:1px solid #3a3f45; border-radius:6px; padding:14px 18px; margin:14px auto; background:#1b1e22; max-width:640px; }
+  .step h4 { color:#9ec5ff; margin-bottom:12px; }
+  .frow { display:flex; align-items:center; margin:10px 0; padding-left:28px; }
+  .frow > .flbl { flex:0 0 150px; text-align:right; padding-right:14px; color:#cfd3d7; }
+  .frow > .fin { flex:1 1 auto; }
+  .frow > .fin .form-control { width:100%; max-width:340px; margin:0; }
+</style>
+<div class="container">
+  <h2>App update</h2>
+  {{ if .err }}<center><br><p style="color:#e66">{{ .err }}</p></center>{{ end }}
+  {{ if .msg }}<center><br><p style="color:lightgreen">{{ .msg }}</p></center>{{ end }}
+  <p><a href="/manage">&larr; PT Competitions</a></p>
+
+  <div class="step">
+    <h4>Currently published</h4>
+    {{ if .versions }}
+      {{ range $p, $v := .versions }}
+      <div class="frow"><div class="flbl">{{ $p }}</div><div class="fin"><b>{{ $v }}</b></div></div>
+      {{ end }}
+    {{ else }}
+      <div class="frow"><div class="flbl">Builds</div><div class="fin"><span style="color:#9aa0a6">none yet</span></div></div>
+    {{ end }}
+    <p style="color:#9aa0a6; padding-left:28px">Students' apps check this on launch and update themselves when their platform's version here is higher than theirs. Each platform has its own version: publishing one doesn't change another. Set the version to match the build's AGENT_VERSION.</p>
+  </div>
+
+  <form method="POST" action="/manage/agent" enctype="multipart/form-data">
+    <div class="step">
+      <h4>Publish a new build</h4>
+      <div class="frow"><div class="flbl">Platform</div>
+        <div class="fin"><select class="form-control" name="platform" required>
+          <option value="windows">Windows (pt_agent.exe)</option>
+          <option value="linux">Linux (pt_agent)</option>
+          <option value="macos">macOS (pt_agent)</option>
+        </select></div></div>
+      <div class="frow"><div class="flbl">Version</div>
+        <div class="fin"><input class="form-control" name="version" placeholder="e.g. 1.1.0" required></div></div>
+      <div class="frow"><div class="flbl">Agent file</div>
+        <div class="fin"><input class="form-control" type="file" name="binary" required></div></div>
+      <div class="frow"><div class="flbl"></div>
+        <div class="fin"><button type="submit" class="btn btn-primary">Publish</button></div></div>
+    </div>
+  </form>
+</div>
+{{ template "feet.html" }}

@@ -1,0 +1,46 @@
+{{ template "head.html" . }}
+{{ template "nav.html" . }}
+<div class="container">
+    <h2>Review &mdash; {{ .comp }}</h2>
+    {{ if .msg }}<center><p style="color:lightgreen">{{ .msg }}</p></center>{{ end }}
+    <p><a href="/manage">&larr; Competitions</a> &nbsp;&middot;&nbsp; <a href="/manage/ai?comp={{ .comp }}">AI-use flags</a></p>
+
+    <h4>Paused / live work <small style="color:#999">(updates the moment a student clicks Stop or Save &amp; keep working)</small></h4>
+    <table class="table table-dark table-sm">
+      <thead><tr><th>Team</th><th>Lvl</th><th>File</th><th>Bytes</th><th>Modified</th><th></th></tr></thead>
+      <tbody>
+      {{ range .progress }}
+        <tr>
+          <td>{{ if .teamAlias }}{{ .teamAlias }}{{ else }}{{ .team }}{{ end }}</td><td>{{ .level }}</td><td>{{ .name }}</td><td>{{ .bytes }}</td><td>{{ .modified }}</td>
+          <td><a class="btn btn-sm btn-secondary" href="/manage/download?comp={{ $.comp }}&kind=progress&name={{ .name }}">Download</a></td>
+        </tr>
+      {{ end }}
+      </tbody>
+    </table>
+
+    <h4>Final submissions <small style="color:#999">(saved on Finish Competition)</small></h4>
+    <table class="table table-dark table-sm">
+      <thead><tr><th>Team</th><th>Lvl</th><th>File</th><th>Bytes</th><th>Modified</th><th></th></tr></thead>
+      <tbody>
+      {{ range .submissions }}
+        <tr>
+          <td>{{ if .teamAlias }}{{ .teamAlias }}{{ else }}{{ .team }}{{ end }}</td><td>{{ .level }}</td><td>{{ .name }}</td><td>{{ .bytes }}</td><td>{{ .modified }}</td>
+          <td>
+            <a class="btn btn-sm btn-secondary" href="/manage/download?comp={{ $.comp }}&kind=submission&name={{ .name }}">Download</a>
+            {{ if and .team .level }}
+            <form style="display:inline" method="POST" action="/manage/restore" onsubmit="return confirm('Make this the resumable copy for {{ .team }} level {{ .level }}?')">
+              <input type="hidden" name="comp" value="{{ $.comp }}">
+              <input type="hidden" name="kind" value="submission">
+              <input type="hidden" name="name" value="{{ .name }}">
+              <input type="hidden" name="team" value="{{ .team }}">
+              <input type="hidden" name="n" value="{{ .level }}">
+              <button class="btn btn-sm btn-info">Restore</button>
+            </form>
+            {{ end }}
+          </td>
+        </tr>
+      {{ end }}
+      </tbody>
+    </table>
+</div>
+{{ template "feet.html" }}

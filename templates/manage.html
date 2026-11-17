@@ -1,0 +1,46 @@
+{{ template "head.html" . }}
+{{ template "nav.html" . }}
+<style>
+  .actions { white-space: nowrap; }
+  .actions form { display: inline-block; margin: 0; }
+  .actions .btn { margin: 1px; vertical-align: middle; font-size: .78rem; padding: .2rem .55rem; min-width: 64px; }
+  .btn-darkred { background:#7d1515; border-color:#7d1515; color:#fff; }
+  .btn-darkred:hover, .btn-darkred:focus { background:#651010; border-color:#651010; color:#fff; }
+</style>
+<div class="container">
+    <h2>PT Competitions</h2>
+    {{ if .err }}<center><br><p style="color:#e66">{{ .err }}</p></center>{{ end }}
+    {{ if .msg }}<center><br><p style="color:lightgreen">{{ .msg }}</p></center>{{ end }}
+    <p><a class="btn btn-primary" href="/manage/new">+ New PT competition</a>
+       <a class="btn btn-primary" href="/manage/agent" style="margin-left:6px">App update</a></p>
+    <table class="table table-dark table-striped">
+      <thead><tr>
+        <th>Name</th><th>Id</th><th># Levels</th><th>Default</th><th>Hidden</th><th>Practice</th><th>Visibility</th><th>AI check</th><th>Subs</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+      {{ range .comps }}
+        <tr>
+          <td>{{ .name }}</td>
+          <td>{{ .id }}</td>
+          <td>{{ .levels }}</td>
+          <td>{{ if .default }}&#9733;{{ end }}</td>
+          <td>{{ if .hidden }}yes{{ end }}</td>
+          <td>{{ if .practice }}practice{{ end }}</td>
+          <td>{{ if .private }}<span style="color:#e0a33a">testers only</span>{{ else }}everyone{{ end }}</td>
+          <td>{{ if .aiCheck }}on{{ end }}{{ if .aiFlagged }} <a href="/manage/ai?comp={{ .id }}" style="color:#e66">{{ .aiFlagged }} flagged</a>{{ end }}</td>
+          <td>{{ .submissions }}</td>
+          <td class="actions">
+            <form method="GET" action="/manage/edit"><input type="hidden" name="comp" value="{{ .id }}"><button class="btn btn-primary">Edit</button></form>
+            <form method="GET" action="/manage/review"><input type="hidden" name="comp" value="{{ .id }}"><button class="btn btn-primary">Review</button></form>
+            <form method="GET" action="/manage/score"><input type="hidden" name="comp" value="{{ .id }}"><button class="btn btn-primary">Set score</button></form>
+            <form method="GET" action="/manage/ai"><input type="hidden" name="comp" value="{{ .id }}"><button class="btn btn-primary">AI flags</button></form>
+            <form method="POST" action="/manage/action"><input type="hidden" name="comp" value="{{ .id }}"><input type="hidden" name="action" value="default"><button class="btn btn-primary">Default</button></form>
+            <form method="POST" action="/manage/action"><input type="hidden" name="comp" value="{{ .id }}"><input type="hidden" name="action" value="{{ if .hidden }}show{{ else }}hide{{ end }}"><button class="btn btn-primary">{{ if .hidden }}Show{{ else }}Hide{{ end }}</button></form>
+            <form method="POST" action="/manage/action" onsubmit="return confirm('Remove {{ .id }}? Level files + scoreboard images are deleted; student submissions are kept.')"><input type="hidden" name="comp" value="{{ .id }}"><input type="hidden" name="action" value="remove"><button class="btn btn-darkred">Remove</button></form>
+          </td>
+        </tr>
+      {{ end }}
+      </tbody>
+    </table>
+</div>
+{{ template "feet.html" }}

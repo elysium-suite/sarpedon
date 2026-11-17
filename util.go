@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"sort"
 	"strconv"
@@ -12,6 +13,18 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
+
+// clientIP returns the source IP of the request, taken from the raw TCP peer
+// address (Request.RemoteAddr). It deliberately ignores X-Forwarded-For and
+// similar headers so a client cannot spoof its address; if sarpedon is ever
+// placed behind a reverse proxy, this would need to trust that proxy instead.
+func clientIP(c *gin.Context) string {
+	ip, _, err := net.SplitHostPort(c.Request.RemoteAddr)
+	if err != nil {
+		return c.Request.RemoteAddr
+	}
+	return ip
+}
 
 func errorOut(c *gin.Context, err error) {
 	fmt.Println("ERROR:", err)
@@ -218,18 +231,14 @@ func consolidateRecords(allRecords []scoreEntry, images []imageData) ([]imageDat
 
 		for _, record := range allRecords {
 			if record.Image.Name == image.Name {
-				record.PlayTime = record.PlayTime.Round(time.Minute)
 
 				tempTimeStr := formatTime(record.PlayTime.Round(time.Minute))
 				record.PlayTimeStr = tempTimeStr[0 : len(tempTimeStr)-3]
 
 				if currentRecord.Time.IsZero() {
-					// fmt.Println("======= setting time ======", record.Time)
 					currentRecord = record
 				}
-				// fmt.Println("CHECKING RECORD", record.Time)
 				if record.Time.Format(timeStr) != currentRecord.Time.Format(timeStr) {
-					// fmt.Println("ADDING new image record, lol:", currentRecord.Time, "versus new", record.Time)
 					images[i].Records = append(images[i].Records, currentRecord)
 					imageRecords = append(imageRecords, timeBegin.Add(currentRecord.PlayTime))
 				}
@@ -238,7 +247,6 @@ func consolidateRecords(allRecords []scoreEntry, images []imageData) ([]imageDat
 		}
 
 		if !currentRecord.Time.IsZero() {
-			// fmt.Println("ADDING new image record, lol:", currentRecord.Time)
 			images[i].Records = append(images[i].Records, currentRecord)
 			imageRecords = append(imageRecords, timeBegin.Add(currentRecord.PlayTime))
 		}

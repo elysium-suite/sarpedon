@@ -1,0 +1,91 @@
+{{ template "head.html" . }}
+{{ template "nav.html" . }}
+
+<div class="container">
+    <h2>Source IP: {{ .ip }}</h2>
+    <p><a href="/monitor">&larr; Back to Monitor</a></p>
+    <p><i>{{ .updateCount }} score update(s) from {{ .teamCount }} team(s) across {{ .imageCount }} image(s).</i></p>
+    <br>
+
+    {{ if .hasTimeline }}
+    <h4>Activity Timeline</h4>
+    <p><i>When this IP was active. The window {{ .axisStart }} &rarr; {{ .axisEnd }} is split into equal {{ .bucketDur }} slices;
+    a dark slice means offline/no activity, brighter blue means more activity. {{ .totalEvents }} event(s) &middot; ~{{ .onlineTotal }} total active. Hover a slice for details.</i></p>
+    <div style="display:flex; gap:2px; height:26px; margin:6px 0; padding:3px; background:#181b1f; border:1px solid #3a3f45; border-radius:5px;">
+        {{ range $b := .buckets }}
+        <div title="{{ $b.Tip }}" style="flex:1 1 0; background:{{ $b.Color }}; border-radius:2px;"></div>
+        {{ end }}
+    </div>
+    <div style="display:flex; justify-content:space-between; font-size:12px; color:#9aa0a6;">
+        <span>{{ .axisStart }}</span>
+        <span>{{ .axisEnd }}</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:5px; font-size:12px; color:#9aa0a6; margin-top:6px;">
+        <span>Offline</span>
+        <span style="display:inline-block;width:14px;height:14px;background:#20242a;border-radius:2px;border:1px solid #3a3f45;"></span>
+        <span style="margin-left:10px;">Less</span>
+        <span style="display:inline-block;width:14px;height:14px;background:#243b57;border-radius:2px;"></span>
+        <span style="display:inline-block;width:14px;height:14px;background:#2f5e97;border-radius:2px;"></span>
+        <span style="display:inline-block;width:14px;height:14px;background:#3f86d4;border-radius:2px;"></span>
+        <span style="display:inline-block;width:14px;height:14px;background:#5aa6ff;border-radius:2px;"></span>
+        <span>More</span>
+    </div>
+    <br>
+    {{ end }}
+
+    <h4>Unregistered Activity From This IP</h4>
+    <p><i>Status checks with a team ID that is not recognized (e.g. a box booted without a valid TeamID.txt).</i></p>
+    <table class="table table-borderless table-dark table-hover scoreboard">
+        <thead class="thead-dark">
+            <th>Image</th>
+            <th>Attempted ID</th>
+            <th>Count</th>
+            <th>First Seen</th>
+            <th>Last Seen</th>
+        </thead>
+        <tbody>
+            {{ range $u := .unregistered }}
+            <tr>
+                <td>{{ $u.Image }}</td>
+                <td>{{ $u.AttemptID }}</td>
+                <td>{{ $u.Count }}</td>
+                <td>{{ (local $u.FirstSeen).Format "2006-01-02 15:04:05 MST" }}</td>
+                <td>{{ (local $u.LastSeen).Format "2006-01-02 15:04:05 MST" }}</td>
+            </tr>
+            {{ else }}
+            <tr><td colspan="5"><i>None.</i></td></tr>
+            {{ end }}
+        </tbody>
+    </table>
+
+    <br>
+
+    <h4>Score Reports From This IP</h4>
+    <p><i>Score updates (<code>/update</code>) received from this IP, most recent first (up to 1000). Only
+    reports made since source-IP tracking was enabled appear here.</i></p>
+    <table class="table table-borderless table-dark table-hover scoreboard">
+        <thead class="thead-dark">
+            <th>Time</th>
+            <th>Team</th>
+            <th>Image</th>
+            <th>Found Vulns</th>
+            <th>Points</th>
+        </thead>
+        <tbody>
+            {{ range $s := .updates }}
+            <tr>
+                <td>{{ (local $s.Time).Format "2006-01-02 15:04:05 MST" }}</td>
+                <td>{{ $s.Team.Alias }} <span class="gray">({{ $s.Team.ID }})</span></td>
+                <td style="color: {{ $s.Image.Color }}">{{ $s.Image.Name }}</td>
+                <td>{{ $s.Vulns.VulnsScored }} / {{ $s.Vulns.VulnsTotal }}</td>
+                <td>{{ $s.Points }}</td>
+            </tr>
+            {{ else }}
+            <tr><td colspan="5"><i>No score reports recorded from this IP yet.</i></td></tr>
+            {{ end }}
+        </tbody>
+    </table>
+    <br>
+</div>
+
+{{ template "feet.html" }}

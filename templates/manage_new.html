@@ -1,0 +1,74 @@
+{{ template "head.html" . }}
+{{ template "nav.html" . }}
+<style>
+  .step { border:1px solid #3a3f45; border-radius:6px; padding:14px 18px; margin:14px auto; background:#1b1e22; max-width:660px; }
+  .step h4 { color:#9ec5ff; margin-bottom:12px; }
+  .rmx { background:none; border:none; color:#9aa0a6; font-size:1.4rem; line-height:1; cursor:pointer; padding:0 2px; }
+  .rmx:hover { color:#e66; }
+  .frow { display:flex; align-items:center; margin:10px 0; padding-left:36px; }
+  .frow > .flbl { flex:0 0 190px; text-align:right; padding-right:14px; color:#cfd3d7; }
+  .frow > .fin { flex:1 1 auto; }
+  .frow > .fin .form-control { width:100%; max-width:360px; margin:0; }   /* override main.css .form-control{width:50%;margin:auto} */
+  .frow > .fin input[type=number] { max-width:110px; }
+  .lvl { border-top:1px solid #3a3f45; margin-top:12px; padding-top:4px; }
+  .lvlhdr { display:flex; justify-content:space-between; align-items:center; color:#9aa0a6; font-weight:bold; }
+</style>
+<div class="container">
+  <h2>New PT competition</h2>
+  {{ if .err }}<center><br><p style="color:#e66">{{ .err }}</p></center>{{ end }}
+  <form method="POST" action="/manage/new" enctype="multipart/form-data">
+
+    <div class="step">
+      <h4>Step 1 &mdash; Name</h4>
+      <div class="frow"><div class="flbl">Competition name</div>
+        <div class="fin"><input class="form-control" name="name" required placeholder="Round 1 Routing"></div></div>
+      <div class="frow"><div class="flbl">Practice</div>
+        <div class="fin"><input type="checkbox" name="practice" id="practice" value="1">
+          <label for="practice" style="color:#cfd3d7; margin:0 0 0 6px">Label this as practice</label></div></div>
+      <div class="frow"><div class="flbl">AI check</div>
+        <div class="fin"><input type="checkbox" name="aiCheck" id="aiCheck" value="1">
+          <label for="aiCheck" style="color:#cfd3d7; margin:0 0 0 6px">Check for AI use (ChatGPT, Claude, Gemini, Copilot&hellip;) while students play</label>
+          <div style="color:#9aa0a6; font-size:0.85em; margin-top:2px">Reports are silent and appear on this competition's AI flags page. Students see that the check is on. Google Search is not flagged.</div></div></div>
+      <div class="frow"><div class="flbl">Visibility</div>
+        <div class="fin"><input type="checkbox" name="public" id="public" value="1" checked onchange="toggleVis()">
+          <label for="public" style="color:#cfd3d7; margin:0 0 0 6px">Available to everyone</label></div></div>
+      <div class="frow" id="allowedrow" style="display:none"><div class="flbl">Allowed teams</div>
+        <div class="fin"><textarea class="form-control" name="allowedTeams" rows="4" placeholder="One Team ID or alias per line &mdash; only these teams can open it before release"></textarea></div></div>
+    </div>
+
+    <div class="step">
+      <h4>Step 2 &mdash; Levels</h4>
+      <p style="color:#9aa0a6">Upload each level's <b>.pka</b> and set the <b>clear %</b> (completion needed to unlock the next level). The server reads the activity hash and generates the scoring keys automatically.</p>
+      <div id="levels"></div>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="addLevel()">+ Add level</button>
+    </div>
+
+    <div class="step">
+      <h4>Step 3 &mdash; Create</h4>
+      <button type="submit" class="btn btn-primary">Create &amp; deploy</button>
+    </div>
+  </form>
+</div>
+<script>
+function toggleVis(){ document.getElementById('allowedrow').style.display = document.getElementById('public').checked ? 'none' : 'flex'; }
+toggleVis();
+function rmLevel(b){ b.closest('.lvl').remove(); }
+let n = 0;
+function addLevel() {
+  n++; const idx = n;
+  const d = document.createElement('div');
+  d.className = 'lvl';
+  d.innerHTML =
+    '<div class="lvlhdr"><span>Level ' + idx + '</span>' +
+      '<button type="button" class="rmx" title="Remove level" onclick="rmLevel(this)">&times;</button></div>' +
+    '<div class="frow"><div class="flbl">Level name</div>' +
+      '<div class="fin"><input class="form-control" name="levelname' + idx + '" placeholder="e.g. Router Basics"></div></div>' +
+    '<div class="frow"><div class="flbl">Activity (.pka)</div>' +
+      '<div class="fin"><input class="form-control" type="file" name="level' + idx + '" accept=".pka" required></div></div>' +
+    '<div class="frow"><div class="flbl">Clear %</div>' +
+      '<div class="fin"><input class="form-control" type="number" name="threshold' + idx + '" value="100" min="1" max="100"></div></div>';
+  document.getElementById('levels').appendChild(d);
+}
+addLevel();
+</script>
+{{ template "feet.html" }}

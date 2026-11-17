@@ -1,0 +1,69 @@
+{{ template "head.html" . }}
+{{ template "nav.html" . }}
+<style>
+  .aiteam { border:1px solid #3a3f45; border-radius:6px; padding:12px 16px; margin:14px 0; background:#1b1e22; }
+  .aiteam h4 { margin:0 0 4px; color:#fff; }
+  .aimeta { color:#9aa0a6; font-size:0.9em; margin-bottom:8px; }
+  .aisig { border-left:3px solid #3a3f45; padding:2px 0 2px 10px; margin:4px 0; color:#cfd3d7; }
+  .aiev { max-width:420px; overflow-wrap:anywhere; }
+  .aiweak { color:#9aa0a6; }
+</style>
+<div class="container">
+  <h2>AI-use flags &mdash; {{ if .name }}{{ .name }}{{ else }}{{ .comp }}{{ end }}</h2>
+  <p><a href="/manage">&larr; Competitions</a> &nbsp;&middot;&nbsp; <a href="/manage/review?comp={{ .comp }}">Review</a></p>
+  {{ if .err }}<center><p style="color:#e66">{{ .err }}</p></center>{{ end }}
+  {{ if .msg }}<center><p style="color:lightgreen">{{ .msg }}</p></center>{{ end }}
+
+  <p style="color:#cfd3d7">The AI check is <b>{{ if .aiCheck }}on{{ else }}off{{ end }}</b> for this competition
+    (<a href="/manage/edit?comp={{ .comp }}">change it</a>). While a level is running, the student app (v1.1.5 or later)
+    looks for AI assistants and reports what it finds here without telling the student. Google Search and its AI summaries are not flagged.</p>
+  <div class="aisig"><b>Window title</b> &mdash; an AI site or app was open on screen. The title is shown; titles are checked every 5 seconds.</div>
+  <div class="aisig"><b>Browser history</b> &mdash; the browser recorded a visit to an AI site while a level was running. The strongest sign. Private/incognito windows are not recorded.</div>
+  <div class="aisig"><b>DNS lookup</b> (Windows) &mdash; the computer looked up an AI site's address. Built-in features such as Windows Copilot or link prefetching can do this without the student visiting, so treat it as weak on its own.</div>
+  <div class="aisig"><b>Clipboard copy</b> &mdash; a large block of text (the task description) was copied to the clipboard or highlighted &mdash; the usual first step of pasting it into an AI. The copied text is shown.</div>
+  <div class="aisig"><b>AI app / CLI</b> &mdash; a locally-run AI tool was running during the level (e.g. opencode, Aider, Cursor, Claude Code, Ollama, LM Studio, or an AI desktop app). The process name is shown. A strong sign.</div>
+
+  {{ range .flagged }}
+  <div class="aiteam">
+    <h4>{{ .Team }} <span style="color:#e66; font-size:0.8em">&nbsp;{{ len .Events }} flagged</span></h4>
+    <div class="aimeta">Last report {{ (local .LastSeenAt).Format "2006-01-02 15:04:05 MST" }}{{ if .Version }} &middot; app {{ .Version }}{{ end }}{{ if .Platform }} on {{ .Platform }}{{ end }}{{ if .IP }} &middot; IP {{ .IP }}{{ end }}{{ if .Checks }}<br>Checked: {{ .CheckList }}{{ end }}</div>
+    <table class="table table-dark table-sm">
+      <thead><tr><th>First seen</th><th>Last seen</th><th>Lvl</th><th>Signal</th><th>AI</th><th>Evidence</th><th>Seen</th></tr></thead>
+      <tbody>
+      {{ range .Events }}
+        <tr{{ if eq .Source "dns" }} class="aiweak"{{ end }}>
+          <td>{{ (local .FirstAt).Format "2006-01-02 15:04:05 MST" }}</td>
+          <td>{{ (local .LastAt).Format "15:04:05" }}</td>
+          <td>{{ if .Level }}{{ .Level }}{{ end }}</td>
+          <td>{{ .SourceLabel }}</td>
+          <td>{{ .Service }}</td>
+          <td class="aiev">{{ .Evidence }}{{ if .Full }}
+            <details style="margin-top:4px"><summary style="cursor:pointer; color:#9ec5ff">show full copied text ({{ len .Full }} chars)</summary>
+            <pre style="white-space:pre-wrap; word-break:break-word; max-height:280px; overflow:auto; background:#15171a; border:1px solid #3a3f45; border-radius:4px; padding:8px; margin:6px 0 0; color:#dfe3e7; font-size:0.85em">{{ .Full }}</pre></details>{{ end }}</td>
+          <td>{{ .Seen }}</td>
+        </tr>
+      {{ end }}
+      </tbody>
+    </table>
+    <form method="POST" action="/manage/ai/clear" onsubmit="return confirm('Delete every AI-use report for {{ .Team }} in this competition?')">
+      <input type="hidden" name="comp" value="{{ $.comp }}"><input type="hidden" name="team" value="{{ .Team }}">
+      <button class="btn btn-sm btn-secondary">Clear these reports</button>
+    </form>
+  </div>
+  {{ end }}
+
+  {{ if .clean }}
+  <h4 style="margin-top:22px">Checked, nothing found</h4>
+  <table class="table table-dark table-sm">
+    <thead><tr><th>Team</th><th>Last report</th><th>App</th><th>Checked</th></tr></thead>
+    <tbody>
+    {{ range .clean }}
+      <tr><td>{{ .Team }}</td><td>{{ (local .LastSeenAt).Format "2006-01-02 15:04:05 MST" }}</td>
+          <td>{{ .Version }}{{ if .Platform }} on {{ .Platform }}{{ end }}</td><td>{{ .CheckList }}</td></tr>
+    {{ end }}
+    </tbody>
+  </table>
+  {{ end }}
+  {{ if not (or .flagged .clean .err) }}<p style="color:#9aa0a6">No reports yet. Teams appear here once their app has run a level with the AI check on.</p>{{ end }}
+</div>
+{{ template "feet.html" }}

@@ -1,0 +1,66 @@
+{{ template "head.html" . }}
+{{ template "nav.html" . }}
+
+<div class="container">
+    <h2>Monitor</h2>
+    <br>
+
+    <h4>Registered Connections</h4>
+    <p><i>Latest source IP seen for each team / image that has reported a score.</i></p>
+    <table class="table table-borderless table-dark table-hover scoreboard">
+        <thead class="thead-dark">
+            <th>Team</th>
+            <th>Image</th>
+            <th>Source IP</th>
+            <th>Last Update</th>
+            <th>Score</th>
+        </thead>
+        <tbody>
+            {{ range $conn := .connections }}
+            <tr>
+                <td>{{ $conn.Team.Alias }} <span class="gray">({{ $conn.Team.ID }})</span></td>
+                <td style="color: {{ $conn.Image.Color }}">{{ $conn.Image.Name }}</td>
+                <td>{{ if $conn.SourceIP }}<a href="/monitor/ip/{{ $conn.SourceIP }}">{{ $conn.SourceIP }}</a>{{ else }}<span class="gray">N/A</span>{{ end }}</td>
+                <td>{{ (local $conn.Time).Format "2006-01-02 15:04:05 MST" }}</td>
+                <td>{{ $conn.Points }}</td>
+            </tr>
+            {{ else }}
+            <tr><td colspan="5"><i>No registered connections yet.</i></td></tr>
+            {{ end }}
+        </tbody>
+    </table>
+
+    <br>
+
+    <h4>Unregistered Activity</h4>
+    <p><i>Status checks received with a team ID that is not recognized &mdash; e.g. an image
+    booted without a valid TeamID.txt. A brief burst right after boot is normal; the same
+    source IP appearing for many minutes suggests an image being worked without a team ID set.</i></p>
+    <table class="table table-borderless table-dark table-hover scoreboard">
+        <thead class="thead-dark">
+            <th>Source IP</th>
+            <th>Image</th>
+            <th>Attempted ID</th>
+            <th>Count</th>
+            <th>First Seen</th>
+            <th>Last Seen</th>
+        </thead>
+        <tbody>
+            {{ range $u := .unregistered }}
+            <tr>
+                <td><a href="/monitor/ip/{{ $u.SourceIP }}">{{ $u.SourceIP }}</a></td>
+                <td>{{ $u.Image }}</td>
+                <td>{{ $u.AttemptID }}</td>
+                <td>{{ $u.Count }}</td>
+                <td>{{ (local $u.FirstSeen).Format "2006-01-02 15:04:05 MST" }}</td>
+                <td>{{ (local $u.LastSeen).Format "2006-01-02 15:04:05 MST" }}</td>
+            </tr>
+            {{ else }}
+            <tr><td colspan="6"><i>No unregistered activity recorded.</i></td></tr>
+            {{ end }}
+        </tbody>
+    </table>
+    <br>
+</div>
+
+{{ template "feet.html" }}

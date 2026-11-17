@@ -1,0 +1,114 @@
+{{ template "head.html" . }}
+{{ template "nav.html" . }}
+{{ template "practice_style.html" }}
+
+<style>
+.sp-sec { margin-top: 1.6rem; }
+.sp-wh small { display:block; font-weight:400; opacity:.7; font-size:.72rem; }
+.sp-div-badge { font-size:.68rem; padding:.05rem .35rem; border-radius:.25rem; background:#2a3550; }
+</style>
+
+<div>
+    <h2>Weekly Sprint</h2>
+    {{ if .err }}
+    <div class="alert alert-dark">Weekly Sprint is unavailable right now ({{ .err }}).</div>
+    {{ else }}
+    <p class="pc-sub">
+        The same practices as the <a href="/practice">Practice</a> page, organised by week. Scores don't
+        count toward the leaderboard.
+        <span class="pc-badge pc-full">week complete</span><span class="pc-badge pc-part">in progress</span><span class="pc-badge pc-started">started</span>
+    </p>
+
+    <!-- Cisco: one table per division -->
+    {{ range $d := .divisions }}
+    <div class="sp-sec">
+        <h3>{{ $d.Name }} <span class="pc-n">Cisco</span></h3>
+        <p class="pc-sub">{{ $d.About }}</p>
+        {{ if not $d.HasComps }}
+        <p>No Cisco practices are loaded for these weeks yet.</p>
+        {{ else }}
+        <!-- which practices each week covers -->
+        <div class="pc-key">
+            {{ range $w := $d.Weeks }}
+            <div class="pc-unit">
+                <span class="pc-unit-name">Week {{ $w.Week }} · {{ $w.Label }}</span>
+                {{ range $cp := $w.Comps }}<a class="pc-key-item" href="/practice/{{ $cp.ID }}">{{ $cp.Name }}</a>{{ end }}
+            </div>
+            {{ end }}
+        </div>
+        {{ if $d.Rows }}
+        <div class="table-responsive">
+            <table class="table table-borderless table-dark table-hover pc-grid">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Team</th>
+                        <th>Cleared</th>
+                        {{ range $w := $d.Weeks }}<th class="pc-ch sp-wh">W{{ $w.Week }}<small>{{ $w.Label }}</small></th>{{ end }}
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range $r := $d.Rows }}
+                    <tr>
+                        <td><a href="/team/{{ $r.Team }}">{{ $r.Team }}</a></td>
+                        <td>{{ $r.ProgStr }} / {{ $r.Total }}</td>
+                        {{ range $c := $r.Cells }}<td class="pc-cell {{ $c.Class }}" title="{{ $c.ProgStr }} of {{ $c.Total }} levels cleared">{{ $c.Summary }}</td>{{ end }}
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+        {{ else }}
+        <p>No team in this division has started a practice yet.</p>
+        {{ end }}
+        {{ end }}
+    </div>
+    {{ end }}
+
+    <!-- Windows / Linux hardening sprints -->
+    <div class="sp-sec">
+        <h3>{{ .vm.Name }} <span class="pc-n">Windows · Linux</span></h3>
+        <p class="pc-sub">{{ .vm.About }}</p>
+        {{ if not .vm.HasComps }}
+        <p>No hardening practices are loaded yet.</p>
+        {{ else }}
+        <div class="pc-key">
+            {{ range $w := .vm.Weeks }}
+            <div class="pc-unit">
+                <span class="pc-unit-name">Week {{ $w.Week }} · {{ $w.Label }}</span>
+                {{ range $cp := $w.Comps }}<a class="pc-key-item" href="/practice/{{ $cp.ID }}">{{ $cp.Name }}</a>{{ end }}
+            </div>
+            {{ end }}
+        </div>
+        {{ if .vm.Rows }}
+        <div class="table-responsive">
+            <table class="table table-borderless table-dark table-hover pc-grid">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Team</th>
+                        <th>Div</th>
+                        <th>Cleared</th>
+                        {{ range $w := .vm.Weeks }}<th class="pc-ch sp-wh">W{{ $w.Week }}<small>{{ $w.Label }}</small></th>{{ end }}
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range $r := .vm.Rows }}
+                    <tr>
+                        <td><a href="/team/{{ $r.Team }}">{{ $r.Team }}</a></td>
+                        <td><span class="sp-div-badge">{{ $r.Division }}</span></td>
+                        <td>{{ $r.ProgStr }} / {{ $r.Total }}</td>
+                        {{ range $c := $r.Cells }}<td class="pc-cell {{ $c.Class }}" title="{{ $c.ProgStr }} of {{ $c.Total }} levels cleared">{{ $c.Summary }}</td>{{ end }}
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+        {{ else }}
+        <p>No team has started a hardening practice yet.</p>
+        {{ end }}
+        {{ end }}
+    </div>
+    <br><br>
+    {{ end }}
+</div>
+
+{{ template "feet.html" }}

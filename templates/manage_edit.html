@@ -1,0 +1,87 @@
+{{ template "head.html" . }}
+{{ template "nav.html" . }}
+<style>
+  .step { border:1px solid #3a3f45; border-radius:6px; padding:14px 18px; margin:14px auto; background:#1b1e22; max-width:660px; }
+  .step h4 { color:#9ec5ff; margin-bottom:12px; }
+  .rmx { background:none; border:none; color:#9aa0a6; font-size:1.4rem; line-height:1; cursor:pointer; padding:0 2px; }
+  .rmx:hover { color:#e66; }
+  .frow { display:flex; align-items:center; margin:10px 0; padding-left:36px; }
+  .frow > .flbl { flex:0 0 190px; text-align:right; padding-right:14px; color:#cfd3d7; }
+  .frow > .fin { flex:1 1 auto; }
+  .frow > .fin .form-control { width:100%; max-width:360px; margin:0; }   /* override main.css .form-control{width:50%;margin:auto} */
+  .frow > .fin input[type=number] { max-width:110px; }
+  .lvl { border-top:1px solid #3a3f45; margin-top:12px; padding-top:4px; }
+  .lvlhdr { display:flex; justify-content:space-between; align-items:center; color:#9aa0a6; font-weight:bold; }
+</style>
+<div class="container">
+  <h2>Edit PT competition</h2>
+  {{ if .err }}<center><br><p style="color:#e66">{{ .err }}</p></center>{{ end }}
+  <form method="POST" action="/manage/edit" enctype="multipart/form-data">
+    <input type="hidden" name="comp" value="{{ .comp }}">
+
+    <div class="step">
+      <h4>Step 1 &mdash; Name</h4>
+      <div class="frow"><div class="flbl">Competition name</div>
+        <div class="fin"><input class="form-control" name="name" value="{{ .name }}" required></div></div>
+      <div class="frow"><div class="flbl">Practice</div>
+        <div class="fin"><input type="checkbox" name="practice" id="practice" value="1" {{ if .practice }}checked{{ end }}>
+          <label for="practice" style="color:#cfd3d7; margin:0 0 0 6px">Label this as practice</label></div></div>
+      <div class="frow"><div class="flbl">AI check</div>
+        <div class="fin"><input type="checkbox" name="aiCheck" id="aiCheck" value="1" {{ if .aiCheck }}checked{{ end }}>
+          <label for="aiCheck" style="color:#cfd3d7; margin:0 0 0 6px">Check for AI use (ChatGPT, Claude, Gemini, Copilot&hellip;) while students play</label>
+          <div style="color:#9aa0a6; font-size:0.85em; margin-top:2px">Reports are silent and appear on this competition's AI flags page. Students see that the check is on. Google Search is not flagged.</div></div></div>
+      <div class="frow"><div class="flbl">Visibility</div>
+        <div class="fin"><input type="checkbox" name="public" id="public" value="1" {{ if not .private }}checked{{ end }} onchange="toggleVis()">
+          <label for="public" style="color:#cfd3d7; margin:0 0 0 6px">Available to everyone</label></div></div>
+      <div class="frow" id="allowedrow" style="display:{{ if .private }}flex{{ else }}none{{ end }}"><div class="flbl">Allowed teams</div>
+        <div class="fin"><textarea class="form-control" name="allowedTeams" rows="4" placeholder="One Team ID or alias per line &mdash; only these teams can open it before release">{{ .allowedTeams }}</textarea></div></div>
+    </div>
+
+    <div class="step">
+      <h4>Step 2 &mdash; Levels</h4>
+      <p style="color:#9aa0a6">Levels are kept as-is unless you upload a replacement. Change the clear %, replace a .pka, add levels, or remove (&times;) them. Order follows position top&rarr;bottom.</p>
+      <div id="levels">
+        {{ range $i, $l := .levels }}
+        <div class="lvl">
+          <div class="lvlhdr"><span>Level {{ increment $i }}: {{ index $l "image" }}</span>
+            <button type="button" class="rmx" title="Remove level" onclick="rmLevel(this)">&times;</button></div>
+          <input type="hidden" name="keep{{ increment $i }}" value="{{ index $l "image" }}">
+          <div class="frow"><div class="flbl">Level name</div>
+            <div class="fin"><input class="form-control" name="levelname{{ increment $i }}" value="{{ index $l "levelName" }}"></div></div>
+          <div class="frow"><div class="flbl">Replace .pka (optional)</div>
+            <div class="fin"><input class="form-control" type="file" name="level{{ increment $i }}" accept=".pka"></div></div>
+          <div class="frow"><div class="flbl">Clear %</div>
+            <div class="fin"><input class="form-control" type="number" name="threshold{{ increment $i }}" value="{{ index $l "threshold" }}" min="1" max="100"></div></div>
+        </div>
+        {{ end }}
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="addLevel()">+ Add level</button>
+    </div>
+
+    <div class="step">
+      <h4>Step 3 &mdash; Save</h4>
+      <button type="submit" class="btn btn-primary">Save &amp; redeploy</button>
+    </div>
+  </form>
+</div>
+<script>
+function toggleVis(){ document.getElementById('allowedrow').style.display = document.getElementById('public').checked ? 'none' : 'flex'; }
+function rmLevel(b){ b.closest('.lvl').remove(); }
+let n = {{ len .levels }};
+function addLevel() {
+  n++; const idx = n;
+  const d = document.createElement('div');
+  d.className = 'lvl';
+  d.innerHTML =
+    '<div class="lvlhdr"><span>Level ' + idx + ' (new)</span>' +
+      '<button type="button" class="rmx" title="Remove level" onclick="rmLevel(this)">&times;</button></div>' +
+    '<div class="frow"><div class="flbl">Level name</div>' +
+      '<div class="fin"><input class="form-control" name="levelname' + idx + '" placeholder="e.g. Router Basics"></div></div>' +
+    '<div class="frow"><div class="flbl">Activity (.pka)</div>' +
+      '<div class="fin"><input class="form-control" type="file" name="level' + idx + '" accept=".pka" required></div></div>' +
+    '<div class="frow"><div class="flbl">Clear %</div>' +
+      '<div class="fin"><input class="form-control" type="number" name="threshold' + idx + '" value="100" min="1" max="100"></div></div>';
+  document.getElementById('levels').appendChild(d);
+}
+</script>
+{{ template "feet.html" }}

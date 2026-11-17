@@ -1,7 +1,6 @@
 {{ template "head.html" . }}
 {{ template "nav.html" . }}
 
-<script src="/assets/chart.min.js"></script>
 <style>
 
 form {
@@ -39,6 +38,9 @@ pre {
 <br>
 {{ end }}
 
+{{ $images := .images }}
+{{ $team := .team }}
+{{ if .data }}
 <!-- Team info -->
 <table class="table table-borderless table-dark table-striped">
     <thead class="thead-dark">
@@ -52,8 +54,6 @@ pre {
         </tr>
     </tbody>
 </table>
-
-{{ $team := .team }}
 
 <!-- Current image scores -->
 <br><h4>Current Image Scores</h4><br>
@@ -88,15 +88,15 @@ pre {
             </td>
             <td>
                 <a href="/team/{{ $team.Alias }}/image/{{ $score.Image.Name }}">
-                {{ $score.Time.Format "2006-01-02 15:04:05" }}
+                {{ (local $score.Time).Format "2006-01-02 15:04:05 MST" }}
                 </a>
             </td>
             <td>
                 <a href="/team/{{ $team.Alias }}/image/{{ $score.Image.Name }}">
-                {{ if eq ($score.CompletionTime.Format "2006-01-02 15:04:05") "0001-01-01 00:00:00"}}
+                {{ if $score.CompletionTime.IsZero }}
                     Image Not Completed
                 {{ else }}
-                    {{ $score.CompletionTime.Format "2006-01-02 15:04:05" }}
+                    {{ (local $score.CompletionTime).Format "2006-01-02 15:04:05 MST" }}
                 {{ end }}
                 </a>
             </td>
@@ -120,52 +120,37 @@ pre {
     </tbody>
 </table>
 
-{{ $labels := .labels }}
-{{ $images := .images }}
+{{ template "scorechart.html" . }}
+{{ else }}
+<p style="color: #aab3bd;">No competition images yet.</p>
+{{ end }}
 
-<!-- Graph of scores over time -->
-<br><br><h4>Scores Over Time (Play Time vs Points)</h4><br>
-<noscript>
-    <p style="color: white; text-align: center">The score graph uses Chart.js, and thus doesn't function without JavaScript.</p>
-</noscript>
-<canvas id="scoresOverTime"></canvas>
-
-<script>
-    var config = {
-        type: 'line',
-        data: {
-            labels: [{{ range $index, $label := $labels }}{{ if $index }} , {{ end }} '{{ $label }}' {{ end }}],
-            datasets: [
-            {{ range $index, $image := $images }}
-            {{ if $index }},{{ end }}
-            {
-                label: '{{ $image.Name }}',
-                {{ if $image.Color }}
-                backgroundColor: '{{ $image.Color }}',
-                borderColor: '{{ $image.Color }}',
-                {{ else }}
-                backgroundColor: 'rgb(255, 255, 255)',
-                borderColor: 'rgb(255, 255, 255)',
-                {{ end }}
-                data: [
-                {{ range $index2, $record := $image.Records }}
-                {{ if $index2 }},{{end}}
-                    {x: '{{ $record.PlayTimeStr }}', y: {{ $record.Points }} }
-                {{ end }} ],
-                fill: false,
-                tension: 0.1
-            }
-            {{ end }}
-            ]
-        }
-    };
-
-    window.onload = function() {
-        var ctx = document.getElementById('scoresOverTime').getContext('2d');
-        window.myLine = new Chart(ctx, config);
-    };
-
-</script>
+<!-- PT practice (kept out of the totals and chart above) -->
+{{ if .practice }}
+{{ template "practice_style.html" }}
+<br><h4>Practice Progress</h4>
+<p class="pc-sub">Cisco, Windows and Linux practice levels; they don't count toward the leaderboard. <a href="/practice">All practice &rarr;</a></p>
+<table class="table table-borderless table-dark table-striped pc-grid">
+    <thead class="thead-dark">
+        <th>Practice</th>
+        <th>Category</th>
+        <th>Cleared</th>
+        <th>Levels</th>
+    </thead>
+    <tbody>
+        {{ range $p := .practice }}
+        <tr>
+            <td><a href="/practice/{{ $p.Comp.ID }}">{{ $p.Comp.Name }}</a></td>
+            <td><a class="pc-cat" href="/practice?cat={{ $p.Comp.Kind }}">{{ $p.Comp.Category }}</a></td>
+            <td><span class="pc-badge {{ $p.Class }}">{{ $p.ProgStr }} / {{ $p.Total }}</span></td>
+            <td style="text-align: left;">{{ range $i, $cell := $p.Cells }}{{ $lv := index $p.Comp.Levels $i }}<span class="pc-chip {{ $cell.Class }}" title="{{ $lv.Name }}{{ if $cell.Started }}: {{ $cell.Pct }}%{{ end }}">L{{ $lv.Level }}{{ if $cell.Started }} {{ $cell.Pct }}%{{ end }}</span>{{ end }}</td>
+        </tr>
+        {{ end }}
+    </tbody>
+</table>
+{{ else if .practiceErr }}
+<p style="color: #aab3bd;">Practice progress is unavailable right now ({{ .practiceErr }}).</p>
+{{ end }}
 
 {{ if .user }}
     <br><br>
@@ -182,10 +167,10 @@ pre {
             <form action="#info{{ $index }}">
                 <label>Record:
                     <select name="record{{ $index }}">
-                            <option value="{{ $image.Index }}" selected>{{ $selected.Time.Format "2006-01-02 15:04:05" }} (current)</option>
+                            <option value="{{ $image.Index }}" selected>{{ (local $selected.Time).Format "2006-01-02 15:04:05 MST" }} (current)</option>
                             {{ range $index1, $record := $image.Records }}
                                 {{ if not (eq $index1 $image.Index ) }}
-                                    <option value="{{ $index1 }}">{{ $record.Time.Format "2006-01-02 15:04:05" }}</option>
+                                    <option value="{{ $index1 }}">{{ (local $record.Time).Format "2006-01-02 15:04:05 MST" }}</option>
                                 {{ end }}
                             {{ end }}
                     <select>

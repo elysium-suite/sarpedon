@@ -10,9 +10,35 @@ import (
 	"github.com/pkg/errors"
 )
 
-func parseUpdate(cryptUpdate string) (scoreEntry, error) {
-	// fmt.Println("Parse update", cryptUpdate)
+// decryptUpdate tries each image's per-image password first (so one image's leaked key
+// can't forge another's score), then the global password. Returns plaintext + key used.
+func decryptUpdate(crypt string) (string, string, error) {
+	for _, img := range sarpConfig.Image {
+		if img.Password == "" {
+			continue
+		}
+		if p, err := decryptString(img.Password, crypt); err == nil {
+			return p, img.Password, nil
+		}
+	}
+	p, err := decryptString(sarpConfig.Password, crypt)
+	return p, sarpConfig.Password, err
+}
 
+// imageForKey returns the image a per-image key belongs to ("" for the global key).
+func imageForKey(key string) string {
+	if key == sarpConfig.Password {
+		return ""
+	}
+	for _, img := range sarpConfig.Image {
+		if img.Password != "" && img.Password == key {
+			return img.Name
+		}
+	}
+	return ""
+}
+
+func parseUpdate(cryptUpdate, sourceIP string) (scoreEntry, error) {
 	if cryptUpdate == "" || !validateString(cryptUpdate) {
 		return scoreEntry{}, errors.New("Empty or invalid characters in cryptUpdate.")
 	}
@@ -20,7 +46,7 @@ func parseUpdate(cryptUpdate string) (scoreEntry, error) {
 	if err != nil {
 		return scoreEntry{}, errors.New("Error decoding hex input.")
 	}
-	plainUpdate, err := decryptString(sarpConfig.Password, cryptUpdate)
+	plainUpdate, key, err := decryptUpdate(cryptUpdate)
 	if err != nil {
 		return scoreEntry{}, err
 	}
@@ -28,28 +54,37 @@ func parseUpdate(cryptUpdate string) (scoreEntry, error) {
 		return scoreEntry{}, errors.Wrap(err, "Update validation failed")
 	}
 
+	d := updateDelimiter(plainUpdate)
+	splitUpdate := strings.Split(plainUpdate, d)
+	if d == delimiter {
+		splitUpdate = splitUpdate[:updateLen]
+	}
 	mapUpdate := make(map[string]string)
-	splitUpdate := strings.Split(plainUpdate, delimiter)[:13]
-	for i := 0; i < len(splitUpdate)-2; i += 2 {
+	for i := 0; i+1 < len(splitUpdate); i += 2 {
 		mapUpdate[splitUpdate[i]] = splitUpdate[i+1]
+	}
+	// a per-image key may only submit for its own image (anti-forgery)
+	if ki := imageForKey(key); ki != "" && mapUpdate["image"] != ki {
+		return scoreEntry{}, errors.New("image does not match the per-image key")
 	}
 	pointValue, err := strconv.Atoi(mapUpdate["score"])
 	if err != nil {
 		return scoreEntry{}, err
 	}
-	vulns, err := parseVulns(mapUpdate["vulns"], pointValue)
+	vulns, err := parseVulns(mapUpdate["vulns"], pointValue, key)
 	if err != nil {
 		return scoreEntry{}, err
 	}
 
 	newEntry := scoreEntry{
-		Time:   time.Now().UTC(),
-		Team:   getTeam(mapUpdate["team"]),
-		Image:  getImage(mapUpdate["image"]),
-		Vulns:  vulns,
-		Points: pointValue,
+		Time:     time.Now().UTC(),
+		Team:     getTeam(mapUpdate["team"]),
+		Image:    getImage(mapUpdate["image"]),
+		Vulns:    vulns,
+		Points:   pointValue,
+		SourceIP: sourceIP,
 	}
-	// fmt.Println("newenntry", newEntry)
+
 	lastRecord, err := getLastScore(&newEntry)
 	if err != nil {
 		lastRecord = scoreEntry{}
@@ -64,19 +99,19 @@ func parseUpdate(cryptUpdate string) (scoreEntry, error) {
 	return newEntry, nil
 }
 
-func parseVulns(vulnText string, imagePoints int) (vulnWrapper, error) {
+func parseVulns(vulnText string, imagePoints int, key string) (vulnWrapper, error) {
 	wrapper := vulnWrapper{}
 	vulnText, err := hexDecode(vulnText)
 	if err != nil {
 		return wrapper, errors.New("Error decoding hex input.")
 	}
 
-	plainVulns, err := decryptString(sarpConfig.Password, vulnText)
+	plainVulns, err := decryptString(key, vulnText)
 	if err != nil {
 		return wrapper, err
 	}
 
-	splitVulns := strings.Split(plainVulns, delimiter)
+	splitVulns := strings.Split(plainVulns, updateDelimiter(plainVulns))
 	scored, err := strconv.Atoi(splitVulns[0])
 	if err != nil {
 		return wrapper, err
@@ -93,7 +128,9 @@ func parseVulns(vulnText string, imagePoints int) (vulnWrapper, error) {
 	splitVulns = splitVulns[2 : len(splitVulns)-1]
 	for _, vuln := range splitVulns {
 		splitVuln := strings.Split(vuln, "-")
-		// fmt.Println("splitvulns", splitVuln, "len", len(splitVuln))
+		if debugEnabled {
+			fmt.Println("splitvulns", splitVuln, "len", len(splitVuln))
+		}
 		if len(splitVuln) < 2 {
 			return wrapper, errors.New(fmt.Sprintln("Error splitting vuln on delimiter:", splitVuln, "length of", len(splitVuln)))
 		}
@@ -106,7 +143,6 @@ func parseVulns(vulnText string, imagePoints int) (vulnWrapper, error) {
 			}
 			vulnText += subString
 		}
-		// fmt.Println("BRUH vulnText", vulnText)
 
 		splitVuln = strings.Split(strings.TrimSpace(splitVuln[len(splitVuln)-1]), " ")
 		if len(splitVuln) != 2 {
@@ -121,9 +157,12 @@ func parseVulns(vulnText string, imagePoints int) (vulnWrapper, error) {
 			return wrapper, errors.New("Error parsing vuln point value")
 		}
 		pointTotal += vulnPoints
-		// fmt.Println("appending", vulnText, vulnPoints)
+		if debugEnabled {
+			fmt.Println("appending vuln text:", vulnText, "vuln points:", vulnPoints)
+		}
 		wrapper.VulnItems = append(wrapper.VulnItems, vulnItem{VulnText: vulnText, VulnPoints: vulnPoints})
 	}
+
 	if pointTotal != imagePoints {
 		fmt.Println("!!! SOMEONE REVERSED THE CRYTPO !!!")
 		fmt.Println("!!! POINTS FOR UPDATE DON'T ADD UP !!")

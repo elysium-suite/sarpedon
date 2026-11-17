@@ -1,0 +1,61 @@
+<!-- Practice timelines, drawn with Apache ECharts (assets/echarts.min.js, loaded once).
+     Colors: the validated categorical palette, dark steps in slot order (checked against this
+     page's #212529 surface: all checks pass). Past 8 series a hue repeats with a dashed line
+     (composite encoding) - never a generated 9th hue. Lines are 2px steps; legend + tooltip. -->
+<script>
+(function () {
+    if (window.pcTimeline) return;
+    var PAL = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"];
+    var waiting = [];
+    function withEcharts(cb) {
+        if (window.echarts) return cb();
+        waiting.push(cb);
+        if (waiting.length > 1) return;
+        var s = document.createElement("script");
+        s.src = "/assets/echarts.min.js";
+        s.onload = function () { var f; while ((f = waiting.shift())) f(); };
+        document.head.appendChild(s);
+    }
+    function when(ms) {
+        return new Date(ms).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    }
+    window.pcTimeline = function (el, series) {
+        if (!el || !series || !series.length) return;
+        withEcharts(function () {
+            var chart = echarts.init(el, "dark");
+            chart.setOption({
+                backgroundColor: "transparent",
+                textStyle: { color: "#cfd5db" },
+                legend: { type: "scroll", top: 0, textStyle: { color: "#cfd5db" },
+                          pageTextStyle: { color: "#cfd5db" }, pageIconColor: "#cfd5db" },
+                tooltip: {
+                    trigger: "axis",
+                    axisPointer: { type: "line" },
+                    formatter: function (ps) {
+                        if (!ps.length) return "";
+                        return when(ps[0].value[0]) + ps.map(function (p) {
+                            return "<br>" + p.marker + " " + p.seriesName + ": <b>" + p.value[1] + "%</b>";
+                        }).join("");
+                    }
+                },
+                grid: { left: 48, right: 20, top: 44, bottom: 60 },
+                xAxis: { type: "time", axisLabel: { color: "#aab3bd" },
+                         axisLine: { lineStyle: { color: "#454d55" } }, splitLine: { show: false } },
+                yAxis: { type: "value", min: 0, max: 100, interval: 25,
+                         axisLabel: { color: "#aab3bd", formatter: "{value}%" },
+                         splitLine: { lineStyle: { color: "#2f343a" } } },
+                dataZoom: [{ type: "inside" }, { type: "slider", height: 18, bottom: 12,
+                                                 textStyle: { color: "#aab3bd" } }],
+                series: series.map(function (s, i) {
+                    var c = PAL[i % PAL.length];
+                    return { name: s.name, type: "line", step: "end", data: s.data,
+                             showSymbol: false, symbolSize: 8, emphasis: { focus: "series" },
+                             color: c, itemStyle: { color: c },
+                             lineStyle: { width: 2, color: c, type: i >= PAL.length ? "dashed" : "solid" } };
+                })
+            });
+            window.addEventListener("resize", function () { chart.resize(); });
+        });
+    };
+})();
+</script>

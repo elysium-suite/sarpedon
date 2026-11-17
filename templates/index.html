@@ -17,7 +17,7 @@
     {{ end }}
     <div class="filterbuttons">
         {{ if $imageFilter }}
-        <p style="color: white; argin-right: 1rem;">
+        <p style="color: white; margin-right: 1rem;">
             Only showing <span style="color: {{ $imageFilter.Color }}"><b>{{ $imageFilter.Name }}</b></span>!
         </p>
         &nbsp;
@@ -27,23 +27,20 @@
             Filter by image:
         </p>
         {{ end }}
-        <div class="btn-group btn-group-sm" role="group">
-            {{ range $image := .config.Image }}
-            <button type="button" class="btn btn-dark" >
-                <a href="/image/{{ $image.Name }}" style="color: {{ $image.Color }}">
-                    {{ $image.Name }}
-                </a>
-            </button>
-            &nbsp;
-            {{ end }}
-            {{ if $imageFilter }}
-            <button type="button" class="btn btn-dark">
-                <a href="/">
-                    All
-                </a>
-            </button>
-            {{ end }}
-        </div>
+        <!-- one dropdown instead of a button per image; PT practice levels live on /practice -->
+        <select class="custom-select custom-select-sm" aria-label="Filter by image"
+                style="width: auto; max-width: 100%; background-color: #343a40; color: #fff; border-color: #454d55;"
+                onchange="if (this.value) location.href = this.value">
+            <option value="/">All images</option>
+            {{ range $image := .config.Image }}{{ if not $image.Practice }}
+            <option value="/image/{{ $image.Name }}" {{ if $imageFilter }}{{ if eq $imageFilter.Name $image.Name }}selected{{ end }}{{ end }}>{{ $image.Name }}</option>
+            {{ end }}{{ end }}
+        </select>
+    </div>
+    <div class="filterbuttons">
+        <br>
+        <p>
+        </p>
     </div>
     <br>
     <table class="table table-borderless table-dark table-hover scoreboard">

@@ -1,0 +1,65 @@
+{{ template "head.html" . }}
+{{ template "nav.html" . }}
+{{ template "practice_style.html" }}
+
+<div>
+    <h2>Practice</h2>
+    {{ if .err }}
+    <div class="alert alert-dark">Practice is unavailable right now ({{ .err }}).</div>
+    {{ else }}
+    <!-- one tab per category -->
+    <div class="pc-tabs">
+        {{ range $t := .tabs }}<a class="pc-tab{{ if $t.Active }} pc-tab-on{{ end }}" href="/practice?cat={{ $t.Key }}">{{ $t.Name }} <span class="pc-n">{{ $t.Count }}</span></a>{{ end }}
+    </div>
+    <p class="pc-sub">{{ .cat.About }} Practice scores don't count toward the leaderboard.</p>
+    {{ if not .comps }}
+    <p>No {{ .cat.Name }} practices yet.</p>
+    {{ else }}
+
+    <!-- every practice, grouped by course unit -->
+    <div class="pc-key">
+        {{ range $u := .units }}
+        <div class="pc-unit">
+            <span class="pc-unit-name">{{ $u.Label }}</span>
+            {{ range $cp := $u.Comps }}<a class="pc-key-item" href="/practice/{{ $cp.ID }}">{{ $cp.Name }} <span class="pc-n">{{ len $cp.Levels }} level{{ if ne (len $cp.Levels) 1 }}s{{ end }}</span></a>{{ end }}
+        </div>
+        {{ end }}
+    </div>
+
+    {{ if .rows }}
+    <p class="pc-sub pc-legend">
+        Each cell: levels cleared / levels in that practice.
+        <span class="pc-badge pc-full">all cleared</span><span class="pc-badge pc-part">some cleared</span><span class="pc-badge pc-started">started</span>
+    </p>
+    <div class="table-responsive">
+        <table class="table table-borderless table-dark table-hover pc-grid">
+            <thead class="thead-dark">
+                <tr>
+                    <th rowspan="2">Team</th>
+                    <th rowspan="2">Cleared</th>
+                    {{ range $u := .units }}<th class="pc-uh" colspan="{{ len $u.Comps }}">{{ $u.Label }}</th>{{ end }}
+                </tr>
+                <tr>
+                    {{ range $cp := .comps }}<th class="pc-ch"><a href="/practice/{{ $cp.ID }}" title="{{ $cp.Name }}">{{ $cp.Short }}</a></th>{{ end }}
+                </tr>
+            </thead>
+            <tbody>
+                {{ range $r := .rows }}
+                <tr>
+                    <td><a href="/team/{{ $r.Team }}">{{ $r.Team }}</a></td>
+                    <td>{{ $r.ProgStr }} / {{ $r.Total }}</td>
+                    {{ range $col := $r.Cols }}<td class="pc-cell {{ $col.Class }}"><a href="/practice/{{ $col.Comp.ID }}" title="{{ $col.Comp.Name }}: {{ $col.ProgStr }} of {{ $col.Total }} levels cleared">{{ $col.Summary }}</a></td>{{ end }}
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+    </div>
+    {{ else }}
+    <p>No team has started a {{ .cat.Name }} practice yet.</p>
+    {{ end }}
+    {{ end }}
+    {{ end }}
+    <br><br>
+</div>
+
+{{ template "feet.html" }}

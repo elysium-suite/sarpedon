@@ -1,0 +1,58 @@
+{{ template "head.html" . }}
+{{ template "nav.html" . }}
+<style>
+  .ms { max-width: 560px; margin: 0 auto; }
+  .ms .field { margin-bottom: 14px; }
+  .ms label { display: block; margin-bottom: 4px; color: #cfd3d7; }
+  .ms .form-control { width: 100%; }
+  .ms .pair { display: flex; gap: 12px; }
+  .ms .pair .field { flex: 1; }
+  .ms table { width: 100%; margin: 6px 0 18px; }
+  .ms td, .ms th { padding: 4px 8px; }
+</style>
+<div class="container ms">
+  <h2>Set a team's score</h2>
+  <p><a href="/manage">&larr; Competitions</a></p>
+  {{ if .err }}<p style="color:#e66">{{ .err }}</p>{{ end }}
+  {{ if .msg }}<p style="color:{{ if .isErr }}#e66{{ else }}lightgreen{{ end }}">{{ .msg }}</p>{{ end }}
+  <p style="color:#cfd3d7">For a student whose VM cannot run the scoring agent. This <b>replaces</b> every score the team has for that level
+    with the one you enter. A later score from the student's own agent can still replace it if it is higher. A level that shows a button on the right has a manual score: remove it to undo the override.</p>
+
+  <form method="GET" action="/manage/score">
+    <div class="field"><label for="comp">Competition</label>
+      <select id="comp" name="comp" class="form-control" onchange="this.form.submit()">
+        <option value="">— choose —</option>
+        {{ range .comps }}<option value="{{ .ID }}" {{ if eq .ID $.comp }}selected{{ end }}>{{ .Name }} ({{ .ID }})</option>{{ end }}
+      </select></div>
+    {{ if .levels }}
+    <div class="field"><label for="team">Team (id or alias)</label>
+      <input id="team" name="team" class="form-control" list="teams" value="{{ .team }}" required autocomplete="off" onchange="this.form.submit()">
+      <datalist id="teams">{{ range .teams }}<option value="{{ . }}">{{ end }}</datalist></div>
+    <div class="field"><button class="btn btn-primary">Show current scores</button></div>
+    {{ else }}<noscript><button class="btn btn-primary">Choose</button></noscript>{{ end }}
+  </form>
+
+  {{ if and .levels .team }}
+  <h5>Current scores for {{ .team }}</h5>
+  <table class="table table-dark table-sm">
+    <thead><tr><th>Level</th><th>Name</th><th>Score</th><th></th></tr></thead>
+    <tbody>{{ range .info }}<tr><td>{{ .Level }}</td><td>{{ .Name }}</td><td>{{ if .Has }}{{ .Scored }} / {{ .Total }} ({{ .Percent }}%){{ else }}<span style="color:#888">no score</span>{{ end }}</td>
+      <td>{{ if .Manual }}<form method="POST" action="/manage/score/remove" style="margin:0" onsubmit="return confirm('Remove the manual score for level {{ .Level }}? The team goes back to having no score there unless its own agent has reported one.')">
+        <input type="hidden" name="comp" value="{{ $.comp }}"><input type="hidden" name="team" value="{{ $.team }}"><input type="hidden" name="level" value="{{ .Level }}">
+        <button class="btn btn-sm btn-outline-danger">Remove manual score</button></form>{{ end }}</td></tr>{{ end }}</tbody>
+  </table>
+
+  <form method="POST" action="/manage/score" onsubmit="return confirm('Replace this team\'s score for that level?')">
+    <input type="hidden" name="comp" value="{{ .comp }}">
+    <input type="hidden" name="team" value="{{ .team }}">
+    <div class="field"><label for="level">Level</label>
+      <select id="level" name="level" class="form-control">{{ range .info }}<option value="{{ .Level }}">Level {{ .Level }} — {{ .Name }}{{ if .Has }} (now {{ .Scored }}/{{ .Total }}){{ end }}</option>{{ end }}</select></div>
+    <div class="pair">
+      <div class="field"><label for="scored">Points scored</label><input id="scored" name="scored" type="number" min="0" class="form-control" required></div>
+      <div class="field"><label for="total">Out of</label><input id="total" name="total" type="number" min="1" value="100" class="form-control"></div>
+    </div>
+    <button class="btn btn-primary">Save score</button>
+  </form>
+  {{ end }}
+</div>
+{{ template "feet.html" }}
