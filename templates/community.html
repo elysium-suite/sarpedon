@@ -15,13 +15,13 @@
     <div style="overflow-x: auto;">
     <table class="table table-dark table-sm">
         <thead><tr>
-            <th>Image</th>
+            <th style="white-space: nowrap;">Image</th>
             {{ range $u := .matrix.Users }}<th>{{ with index $links $u }}{{ . }}{{ else }}{{ $u }}{{ end }}</th>{{ end }}
         </tr></thead>
         <tbody>
         {{ range $row := .matrix.Rows }}
         <tr>
-            <td>{{ $row.Image }}</td>
+            <td style="white-space: nowrap;">{{ $row.Image }}</td>
             {{ range $i, $cell := $row.Cells }}
             <td>{{ if $cell }}<a href="/community/detail?key={{ urlquery $row.Key }}&user={{ urlquery $cell.User }}">{{ $cell.Best.Score }}</a>{{ end }}</td>
             {{ end }}
