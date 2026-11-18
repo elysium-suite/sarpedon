@@ -155,7 +155,8 @@ func validateImage(imageName string) bool {
 
 // createNewTeamId registers a team seen for the first time (only reached when allownewteam is set).
 func createNewTeamId(teamId string) teamData {
-	team := teamData{ID: teamId}
+	// Alias defaults to the ID: an empty alias makes the next start fail validation (config.go).
+	team := teamData{ID: teamId, Alias: teamId}
 	sarpConfig.Team = append(sarpConfig.Team, team)
 	updateConfig()
 	return team

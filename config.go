@@ -94,12 +94,15 @@ func checkConfig() {
 		}
 	}
 
-	for _, team := range sarpConfig.Team {
+	for i := range sarpConfig.Team {
+		team := &sarpConfig.Team[i]
 		if team.ID == "" {
-			log.Fatalln("Team id is empty:", team)
+			log.Fatalln("Team id is empty:", *team)
 		}
 		if team.Alias == "" {
-			log.Fatalln("Team alias is empty:", team)
+			// Don't refuse to start over a missing alias: use the ID so scoring keeps running.
+			log.Println("Team alias is empty, using the ID:", team.ID)
+			team.Alias = team.ID
 		}
 		matches := 0
 		var dupeTeam teamData
