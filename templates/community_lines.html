@@ -5,8 +5,8 @@
     <h2>Community Image Lines</h2>
     <p><a href="/community">&larr; Community images</a>{{ if .user }} &middot; <a href="/manage/community">Admin</a>{{ end }}</p>
     {{ if .msg }}<p style="color:lightgreen">{{ .msg }}</p>{{ end }}
-    <p style="color: #aab3bd;">Score reports students post as screenshots in Discord #homework-submission. The bot reads each screenshot and flags
-    reports whose time or score looks off; a flag is only a heads-up, nobody is penalised automatically. Community scores don't count toward the leaderboard.</p>
+    <p style="color: #aab3bd;">Score reports students post as screenshots in Discord #homework-submission. The bot reads each screenshot; reports
+    whose time or score can't be confirmed are marked "to review", which is only a note, nobody is penalised. Community scores don't count toward the leaderboard.</p>
     {{ if .err }}
     <div class="alert alert-dark">Community images are unavailable right now ({{ .err }}).</div>
     {{ else if not .feed.Images }}
@@ -28,7 +28,7 @@
             <td>{{ $e.Best.Score }}{{ if $e.Best.MaxScore }} / {{ call $num $e.Best.MaxScore }}{{ end }}</td>
             <td>{{ if $e.Best.FoundVulns }}{{ call $num $e.Best.FoundVulns }}{{ if $e.Best.TotalVulns }} / {{ call $num $e.Best.TotalVulns }}{{ end }}{{ end }}</td>
             <td>{{ call $dur $e.Best.ElapsedSeconds }}</td>
-            <td title="{{ range $r := $e.Best.Reasons }}{{ $r }}; {{ end }}">{{ if eq $e.Best.Verdict "ok" }}✅ ok{{ else }}{{ $e.Best.Verdict }}{{ end }}</td>
+            <td title="{{ range $r := $e.Best.Reasons }}{{ $r }}; {{ end }}">{{ if eq $e.Best.Verdict "ok" }}✅ ok{{ else if eq $e.Best.Verdict "suspicious" }}to review{{ else }}{{ $e.Best.Verdict }}{{ end }}</td>
             <td>{{ $e.Latest.Score }}{{ if $e.Latest.ElapsedSeconds }} ({{ call $dur $e.Latest.ElapsedSeconds }}){{ end }}</td>
             <td>{{ $e.Submissions }}</td>
             <td>{{ if $e.Best.Thumb }}<a href="{{ $e.Best.Thumb }}" target="_blank"><img src="{{ $e.Best.Thumb }}" alt="score report" style="height: 48px; border-radius: 3px;"></a>{{ end }}</td>

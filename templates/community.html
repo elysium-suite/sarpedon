@@ -4,7 +4,7 @@
 <div>
     <h2>Community Images</h2>
     <p style="color: #aab3bd;">Score reports students post as screenshots in Discord #homework-submission. Each cell is that player's best score on the image;
-    click it for their details. The bot flags reports whose time or score looks off; a flag is only a heads-up, nobody is penalised automatically.
+    click it for their details. Reports whose time or score can't be confirmed from the screenshot are marked "to review"; that is only a note, nobody is penalised.
     Community scores don't count toward the leaderboard. <a href="/community/lines">Line items</a>{{ if .user }} &middot; <a href="/manage/community">Admin</a>{{ end }}</p>
     {{ if .err }}
     <div class="alert alert-dark">Community images are unavailable right now ({{ .err }}).</div>

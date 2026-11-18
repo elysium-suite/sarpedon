@@ -14,7 +14,7 @@
         <tr><th>Vulns</th><td>{{ if $e.Best.FoundVulns }}{{ call $num $e.Best.FoundVulns }}{{ if $e.Best.TotalVulns }} / {{ call $num $e.Best.TotalVulns }}{{ end }}{{ end }}</td></tr>
         <tr><th>Penalties</th><td>{{ call $num $e.Best.Penalties }}</td></tr>
         <tr><th>Time</th><td>{{ call $dur $e.Best.ElapsedSeconds }}</td></tr>
-        <tr><th>Verdict</th><td>{{ $e.Best.Verdict }}{{ range $e.Best.Reasons }}<br><small>{{ . }}</small>{{ end }}</td></tr>
+        <tr><th>Verdict</th><td>{{ if eq $e.Best.Verdict "suspicious" }}to review{{ else }}{{ $e.Best.Verdict }}{{ end }}{{ range $e.Best.Reasons }}<br><small>{{ . }}</small>{{ end }}</td></tr>
         <tr><th>Submitted</th><td>{{ $e.Best.Submitted }}</td></tr>
     </tbody></table>
     {{ if $e.Best.Thumb }}<a href="{{ $e.Best.Thumb }}" target="_blank"><img src="{{ $e.Best.Thumb }}" alt="score report" style="max-width:100%; max-height:480px; border-radius:3px;"></a>{{ end }}
@@ -24,7 +24,7 @@
         <tr><th>Vulns</th><td>{{ if $e.Latest.FoundVulns }}{{ call $num $e.Latest.FoundVulns }}{{ if $e.Latest.TotalVulns }} / {{ call $num $e.Latest.TotalVulns }}{{ end }}{{ end }}</td></tr>
         <tr><th>Penalties</th><td>{{ call $num $e.Latest.Penalties }}</td></tr>
         <tr><th>Time</th><td>{{ call $dur $e.Latest.ElapsedSeconds }}</td></tr>
-        <tr><th>Verdict</th><td>{{ $e.Latest.Verdict }}{{ range $e.Latest.Reasons }}<br><small>{{ . }}</small>{{ end }}</td></tr>
+        <tr><th>Verdict</th><td>{{ if eq $e.Latest.Verdict "suspicious" }}to review{{ else }}{{ $e.Latest.Verdict }}{{ end }}{{ range $e.Latest.Reasons }}<br><small>{{ . }}</small>{{ end }}</td></tr>
         <tr><th>Submitted</th><td>{{ $e.Latest.Submitted }}</td></tr>
     </tbody></table>
     {{ if $e.Latest.Thumb }}<a href="{{ $e.Latest.Thumb }}" target="_blank"><img src="{{ $e.Latest.Thumb }}" alt="score report" style="max-width:100%; max-height:480px; border-radius:3px;"></a>{{ end }}
