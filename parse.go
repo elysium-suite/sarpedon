@@ -201,7 +201,7 @@ func parseScoresIntoTeams(scores []scoreEntry) ([]teamData, error) {
 		if currentTeam.ID != score.Team.ID {
 			td = append(td, teamData{
 				ID:         currentTeam.ID,
-				Alias:      currentTeam.Alias,
+				Alias:      displayAlias(currentTeam),
 				Email:      currentTeam.Email,
 				ImageCount: imageCount,
 				Score:      totalScore,
@@ -219,7 +219,7 @@ func parseScoresIntoTeams(scores []scoreEntry) ([]teamData, error) {
 
 	td = append(td, teamData{
 		ID:         scores[len(scores)-1].Team.ID,
-		Alias:      scores[len(scores)-1].Team.Alias,
+		Alias:      displayAlias(scores[len(scores)-1].Team),
 		Email:      scores[len(scores)-1].Team.Email,
 		ImageCount: imageCount,
 		Score:      totalScore,
@@ -237,4 +237,19 @@ func parseScoresIntoTeams(scores []scoreEntry) ([]teamData, error) {
 	})
 
 	return td, nil
+}
+
+// displayAlias is the name to show for a team on the scoreboard. A score stores the team as it
+// was when the score came in; teams auto-created on their first score got their ID as alias, so
+// when sarpedon.conf now holds a real alias for that ID, it wins over a stored empty/ID alias.
+func displayAlias(t teamData) string {
+	if t.Alias != "" && !strings.EqualFold(t.Alias, t.ID) {
+		return t.Alias
+	}
+	for _, c := range sarpConfig.Team {
+		if c.ID == t.ID && c.Alias != "" && !strings.EqualFold(c.Alias, c.ID) {
+			return c.Alias
+		}
+	}
+	return t.Alias
 }
