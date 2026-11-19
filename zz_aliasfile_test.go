@@ -47,8 +47,8 @@ func TestCreatingTeamKeepsHandEditedAlias(t *testing.T) {
 func TestWithDisplayAliasFixesEveryScore(t *testing.T) {
 	sarpConfig.Team = []teamData{{ID: "u1", Alias: "alice"}}
 	defer func() { sarpConfig.Team = nil }()
-	got := withDisplayAlias([]scoreEntry{{Team: teamData{ID: "u1", Alias: "u1"}}, {Team: teamData{ID: "u2", Alias: "u2"}}})
-	if got[0].Team.Alias != "alice" || got[1].Team.Alias != publicName("u2", "") {
+	got := withDisplayAlias([]scoreEntry{{Team: teamData{ID: "u1", Alias: "u1"}}, {Team: teamData{ID: "tt-0123456789abcdef", Alias: "tt-0123456789abcdef"}}})
+	if got[0].Team.Alias != "alice" || got[1].Team.Alias != publicName("tt-0123456789abcdef", "") {
 		t.Fatalf("got %+v", got)
 	}
 }

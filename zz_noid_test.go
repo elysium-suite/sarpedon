@@ -8,11 +8,12 @@ import (
 	"testing"
 )
 
+// (A typed-in name that is its own alias, e.g. "xinya", is shown as is: see TestDisplayAlias.)
 // A team ID is a credential: no name we show may equal it.
 func TestNoTeamNameIsAnID(t *testing.T) {
 	sarpConfig.Team = []teamData{{ID: "SecretID01", Alias: "SecretID01"}, {ID: "OtherID02", Alias: "ok"}}
 	defer func() { sarpConfig.Team = nil }()
-	for _, tm := range []teamData{{ID: "SecretID01"}, {ID: "SecretID01", Alias: "secretid01"}, {ID: "unknown9", Alias: "unknown9"}, {ID: "unknown9"}} {
+	for _, tm := range []teamData{{ID: "SecretID01"}, {ID: "SecretID01", Alias: "secretid01"}, {ID: "Unknown9ab", Alias: "Unknown9ab"}, {ID: "Unknown9ab"}} {
 		got := displayAlias(tm)
 		if strings.EqualFold(got, tm.ID) || !strings.HasPrefix(got, "Team-") {
 			t.Errorf("%+v shows %q", tm, got)

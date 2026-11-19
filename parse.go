@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -248,6 +249,11 @@ func publicName(id, alias string) string {
 	if alias != "" && !strings.EqualFold(alias, id) {
 		return alias
 	}
+	if alias != "" && !looksLikeCredential(id) {
+		// A team created on the fly from a typed-in name has that name as both ID and alias; it is
+		// a name, not a credential, so show it rather than an unexplained "Team-xxxxxx".
+		return alias
+	}
 	sum := sha256.Sum256([]byte(id))
 	return "Team-" + hex.EncodeToString(sum[:])[:6]
 }
@@ -289,4 +295,22 @@ func withDisplayAlias(scores []scoreEntry) []scoreEntry {
 		scores[i].Team.Alias = displayAlias(scores[i].Team)
 	}
 	return scores
+}
+
+var (
+	mintedID = regexp.MustCompile(`^tt-[0-9a-f]{16}$`)
+	randomID = regexp.MustCompile(`^[A-Za-z0-9]{10}$`)
+	hasDigit = regexp.MustCompile(`[0-9]`)
+	hasUpper = regexp.MustCompile(`[A-Z]`)
+	hasLower = regexp.MustCompile(`[a-z]`)
+)
+
+// looksLikeCredential reports whether id has the shape of a generated team ID (levelsvc's
+// tt-<16 hex>, or sarpedon's 10-char mixed-case alphanumeric with a digit) as opposed to a
+// human-typed name such as "xinya" or "Team Rocket".
+func looksLikeCredential(id string) bool {
+	if mintedID.MatchString(id) {
+		return true
+	}
+	return randomID.MatchString(id) && hasDigit.MatchString(id) && hasUpper.MatchString(id) && hasLower.MatchString(id)
 }
