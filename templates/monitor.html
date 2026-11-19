@@ -18,7 +18,7 @@
         <tbody>
             {{ range $conn := .connections }}
             <tr>
-                <td>{{ $conn.Team.Alias }} <span class="gray">({{ $conn.Team.ID }})</span></td>
+                <td>{{ $conn.Team.Alias }}</td>
                 <td style="color: {{ $conn.Image.Color }}">{{ $conn.Image.Name }}</td>
                 <td>{{ if $conn.SourceIP }}<a href="/monitor/ip/{{ $conn.SourceIP }}">{{ $conn.SourceIP }}</a>{{ else }}<span class="gray">N/A</span>{{ end }}</td>
                 <td>{{ (local $conn.Time).Format "2006-01-02 15:04:05 MST" }}</td>

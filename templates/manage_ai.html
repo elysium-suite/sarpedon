@@ -25,7 +25,7 @@
 
   {{ range .flagged }}
   <div class="aiteam">
-    <h4>{{ .Team }} <span style="color:#e66; font-size:0.8em">&nbsp;{{ len .Events }} flagged</span></h4>
+    <h4>{{ .Label }} <span style="color:#e66; font-size:0.8em">&nbsp;{{ len .Events }} flagged</span></h4>
     <div class="aimeta">Last report {{ (local .LastSeenAt).Format "2006-01-02 15:04:05 MST" }}{{ if .Version }} &middot; app {{ .Version }}{{ end }}{{ if .Platform }} on {{ .Platform }}{{ end }}{{ if .IP }} &middot; IP {{ .IP }}{{ end }}{{ if .Checks }}<br>Checked: {{ .CheckList }}{{ end }}</div>
     <table class="table table-dark table-sm">
       <thead><tr><th>First seen</th><th>Last seen</th><th>Lvl</th><th>Signal</th><th>AI</th><th>Evidence</th><th>Seen</th></tr></thead>
@@ -45,7 +45,7 @@
       {{ end }}
       </tbody>
     </table>
-    <form method="POST" action="/manage/ai/clear" onsubmit="return confirm('Delete every AI-use report for {{ .Team }} in this competition?')">
+    <form method="POST" action="/manage/ai/clear" onsubmit="return confirm('Delete every AI-use report for {{ .Label }} in this competition?')">
       <input type="hidden" name="comp" value="{{ $.comp }}"><input type="hidden" name="team" value="{{ .Team }}">
       <button class="btn btn-sm btn-secondary">Clear these reports</button>
     </form>
@@ -58,7 +58,7 @@
     <thead><tr><th>Team</th><th>Last report</th><th>App</th><th>Checked</th></tr></thead>
     <tbody>
     {{ range .clean }}
-      <tr><td>{{ .Team }}</td><td>{{ (local .LastSeenAt).Format "2006-01-02 15:04:05 MST" }}</td>
+      <tr><td>{{ .Label }}</td><td>{{ (local .LastSeenAt).Format "2006-01-02 15:04:05 MST" }}</td>
           <td>{{ .Version }}{{ if .Platform }} on {{ .Platform }}{{ end }}</td><td>{{ .CheckList }}</td></tr>
     {{ end }}
     </tbody>

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"sort"
 	"strconv"
@@ -239,10 +241,23 @@ func parseScoresIntoTeams(scores []scoreEntry) ([]teamData, error) {
 	return td, nil
 }
 
+// publicName is the only name of a team that may be shown to anyone: its alias, or, when it has no
+// real alias (empty or equal to the ID), a short label derived from a hash of the ID. A team ID is a
+// credential, so it must never appear on a page, in an export, a link we render or an announcement.
+func publicName(id, alias string) string {
+	if alias != "" && !strings.EqualFold(alias, id) {
+		return alias
+	}
+	sum := sha256.Sum256([]byte(id))
+	return "Team-" + hex.EncodeToString(sum[:])[:6]
+}
+
 // displayAlias is the name to show for a team on the scoreboard. A score stores the team as it
 // was when the score came in; teams auto-created on their first score got their ID as alias, so
 // when sarpedon.conf now holds a real alias for that ID, it wins over a stored empty/ID alias.
+// It never returns the ID itself (see publicName).
 func displayAlias(t teamData) string {
+	refreshTeams()
 	if t.Alias != "" && !strings.EqualFold(t.Alias, t.ID) {
 		return t.Alias
 	}
@@ -251,5 +266,27 @@ func displayAlias(t teamData) string {
 			return c.Alias
 		}
 	}
-	return t.Alias
+	return publicName(t.ID, t.Alias)
+}
+
+// teamLabel is publicName for a team id found in sarpedon.conf (by id, case-insensitive); an id
+// the config doesn't know still gets a hashed label, never itself.
+func teamLabel(id string) string {
+	refreshTeams()
+	for _, t := range sarpConfig.Team {
+		if strings.EqualFold(t.ID, id) {
+			return publicName(t.ID, t.Alias)
+		}
+	}
+	return publicName(id, "")
+}
+
+// withDisplayAlias gives every score's team the name to show for it (see displayAlias). Scores come
+// from the database with the team as it was at scoring time, so every place that loads scores calls
+// this once; nothing downstream (leaderboard, team pages, practice, sprint) sees a stale ID alias.
+func withDisplayAlias(scores []scoreEntry) []scoreEntry {
+	for i := range scores {
+		scores[i].Team.Alias = displayAlias(scores[i].Team)
+	}
+	return scores
 }

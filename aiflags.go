@@ -80,6 +80,9 @@ type aiFlagTeam struct {
 	Events   []aiFlagEvent     `json:"events"`
 }
 
+// Label is the name to show; Team is the id (a credential) and only goes in hidden form fields.
+func (t aiFlagTeam) Label() string { return teamLabel(t.Team) }
+
 func (t aiFlagTeam) LastSeenAt() time.Time { return time.Unix(t.LastSeen, 0) }
 
 // CheckList is what the agent could check on that computer, e.g. "history: Chrome, Firefox".

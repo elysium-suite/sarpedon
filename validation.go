@@ -113,7 +113,7 @@ func validateTeam(teamName string) bool {
 		if team.ID == teamName {
 			return true
 		}
-		if team.Alias == teamName {
+		if team.Alias == teamName || publicName(team.ID, team.Alias) == teamName {
 			return true
 		}
 	}

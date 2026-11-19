@@ -158,7 +158,7 @@ func linkMap(links []communityLink) map[string]string {
 	for _, l := range links {
 		m[l.Discord] = l.Team
 		if a := aliasFor(l.Team); a != "" { // links saved earlier as an id show as the alias
-			m[l.Discord] = a
+			m[l.Discord] = teamLabel(l.Team)
 		}
 	}
 	return m
@@ -344,7 +344,7 @@ func knownAliases() []string {
 		}
 	}
 	for _, t := range sarpConfig.Team {
-		add(t.Alias)
+		add(publicName(t.ID, t.Alias))
 	}
 	if scores, e := getTop(); e == nil {
 		for _, s := range scores {
@@ -364,7 +364,7 @@ func resolveAlias(in string, known []string) (string, bool) {
 		}
 	}
 	if a := aliasFor(in); a != "" {
-		return a, true
+		return teamLabel(in), true
 	}
 	return "", false
 }

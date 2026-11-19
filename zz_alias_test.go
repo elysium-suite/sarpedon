@@ -13,8 +13,8 @@ func TestDisplayAlias(t *testing.T) {
 		{teamData{ID: "JSaV8BOsvC", Alias: "JSaV8BOsvC"}, "coolturtle"},
 		{teamData{ID: "JSaV8BOsvC"}, "coolturtle"},
 		{teamData{ID: "JSaV8BOsvC", Alias: "stored"}, "stored"},
-		{teamData{ID: "plain", Alias: "plain"}, "plain"},
-		{teamData{ID: "unknown", Alias: "unknown"}, "unknown"},
+		{teamData{ID: "plain", Alias: "plain"}, publicName("plain", "")}, // no real alias: a hashed label, never the id
+		{teamData{ID: "unknown", Alias: "unknown"}, publicName("unknown", "")},
 	}
 	for _, c := range cases {
 		if got := displayAlias(c.in); got != c.want {

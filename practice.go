@@ -380,21 +380,23 @@ func bestScoredByImage(image string) (map[string]int, error) {
 	coll := mongoClient.Database(dbName).Collection("scores")
 	cur, err := coll.Aggregate(context.TODO(), mongo.Pipeline{
 		{{Key: "$match", Value: bson.M{"image.name": image}}},
-		{{Key: "$group", Value: bson.M{"_id": "$team.alias", "best": bson.M{"$max": "$vulns.vulnsscored"}}}},
+		{{Key: "$group", Value: bson.M{"_id": "$team.id", "best": bson.M{"$max": "$vulns.vulnsscored"}}}},
 	})
 	if err != nil {
 		return nil, err
 	}
 	var rows []struct {
-		Alias string `bson:"_id"`
-		Best  int    `bson:"best"`
+		ID   string `bson:"_id"` // grouped by id: the stored alias may be stale (an id)
+		Best int    `bson:"best"`
 	}
 	if err := cur.All(context.TODO(), &rows); err != nil {
 		return nil, err
 	}
 	m := make(map[string]int, len(rows))
 	for _, r := range rows {
-		m[r.Alias] = r.Best
+		if name := teamLabel(r.ID); r.Best > m[name] {
+			m[name] = r.Best
+		}
 	}
 	bestCache[image], bestAt[image] = m, time.Now()
 	return m, nil
@@ -409,7 +411,7 @@ func adjustedScoredByImage(image string, release time.Time) (map[string]int, err
 	historyIndexOnce.Do(func() {
 		coll.Indexes().CreateOne(context.TODO(), mongo.IndexModel{Keys: bson.D{{Key: "image.name", Value: 1}, {Key: "time", Value: 1}}})
 	})
-	opts := options.Find().SetProjection(bson.M{"time": 1, "team.alias": 1, "vulns.vulnsscored": 1})
+	opts := options.Find().SetProjection(bson.M{"time": 1, "team.id": 1, "team.alias": 1, "vulns.vulnsscored": 1})
 	cur, err := coll.Find(context.TODO(), bson.M{"image.name": image}, opts)
 	if err != nil {
 		return nil, err
@@ -421,7 +423,7 @@ func adjustedScoredByImage(image string, release time.Time) (map[string]int, err
 	before := map[string]int{}
 	overall := map[string]int{}
 	for _, e := range rows {
-		a := e.Team.Alias
+		a := displayAlias(e.Team)
 		s := e.Vulns.VulnsScored
 		if s > overall[a] {
 			overall[a] = s
@@ -725,10 +727,11 @@ func practiceHistory(images []string, teamAlias string) ([]practicePoint, error)
 	})
 	filter := bson.M{"image.name": bson.M{"$in": images}}
 	if teamAlias != "" {
-		filter["team.alias"] = teamAlias
+		// by id as well as alias: scores stored while the team's alias was its id carry the id
+		filter["$or"] = []bson.M{{"team.alias": teamAlias}, {"team.id": bson.M{"$in": idsNamed(teamAlias)}}}
 	}
 	opts := options.Find().SetSort(bson.D{{Key: "time", Value: 1}}).SetProjection(bson.M{
-		"time": 1, "team.alias": 1, "image.name": 1, "vulns.vulnsscored": 1, "vulns.vulnstotal": 1, "points": 1})
+		"time": 1, "team.id": 1, "team.alias": 1, "image.name": 1, "vulns.vulnsscored": 1, "vulns.vulnstotal": 1, "points": 1})
 	cur, err := coll.Find(context.TODO(), filter, opts)
 	if err != nil {
 		return nil, err
@@ -739,7 +742,7 @@ func practiceHistory(images []string, teamAlias string) ([]practicePoint, error)
 	}
 	out := make([]practicePoint, 0, len(rows))
 	for _, e := range rows {
-		out = append(out, practicePoint{Time: e.Time, Team: e.Team.Alias, Image: e.Image.Name, Pct: pctOf(e)})
+		out = append(out, practicePoint{Time: e.Time, Team: displayAlias(e.Team), Image: e.Image.Name, Pct: pctOf(e)})
 	}
 	return out, nil
 }
@@ -1071,4 +1074,16 @@ func compTeamVulns(comp practiceComp, teams []string, sc map[string]map[string]s
 		}
 	}
 	return out
+}
+
+// idsNamed lists the ids of the configured teams shown under this name.
+func idsNamed(name string) []string {
+	refreshTeams()
+	ids := []string{}
+	for _, t := range sarpConfig.Team {
+		if publicName(t.ID, t.Alias) == name {
+			ids = append(ids, t.ID)
+		}
+	}
+	return ids
 }

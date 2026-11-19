@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"io/ioutil"
 	"log"
+	"os"
+	"sync"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -130,10 +132,87 @@ func checkConfig() {
 	}
 }
 
+// updateConfig saves a team that was just created. It never writes the in-memory config over the
+// file: an admin may have edited sarpedon.conf (aliases!) while the server runs, and rewriting from
+// memory would silently undo that. Instead it re-reads the file, adds any team the file lacks, and
+// then adopts the file's team list, so hand-edited aliases take effect without a restart.
 func updateConfig() {
-	var (
-		confBuffer bytes.Buffer
-	)
-	toml.NewEncoder(&confBuffer).Encode(sarpConfig)
-	ioutil.WriteFile("./sarpedon.conf", confBuffer.Bytes(), 0)
+	configMu.Lock()
+	defer configMu.Unlock()
+	var onDisk config
+	if _, err := os.Stat("./sarpedon.conf"); err == nil {
+		readConfig(&onDisk)
+	} else {
+		onDisk = sarpConfig
+	}
+	for _, t := range sarpConfig.Team {
+		if !hasTeamID(onDisk.Team, t.ID) {
+			onDisk.Team = append(onDisk.Team, t)
+		}
+	}
+	var confBuffer bytes.Buffer
+	toml.NewEncoder(&confBuffer).Encode(onDisk)
+	ioutil.WriteFile("./sarpedon.conf", confBuffer.Bytes(), 0600)
+	sarpConfig.Team = onDisk.Team
+	fillEmptyAliases(sarpConfig.Team)
+	confTeamsLoaded = fileModTime()
+}
+
+func hasTeamID(teams []teamData, id string) bool {
+	for _, t := range teams {
+		if t.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+// A team without an alias uses its ID (see checkConfig).
+func fillEmptyAliases(teams []teamData) {
+	for i := range teams {
+		if teams[i].Alias == "" {
+			teams[i].Alias = teams[i].ID
+		}
+	}
+}
+
+var (
+	configMu        sync.Mutex
+	confTeamsLoaded time.Time
+)
+
+func fileModTime() time.Time {
+	st, err := os.Stat("./sarpedon.conf")
+	if err != nil {
+		return time.Time{}
+	}
+	return st.ModTime()
+}
+
+// refreshTeams re-reads the [[team]] list when sarpedon.conf changed on disk, so an alias an admin
+// just edited shows up at once. A missing or unreadable file keeps the teams already in memory.
+func refreshTeams() {
+	mod := fileModTime()
+	configMu.Lock()
+	defer configMu.Unlock()
+	if mod.IsZero() || mod.Equal(confTeamsLoaded) {
+		return
+	}
+	confTeamsLoaded = mod
+	data, err := ioutil.ReadFile("./sarpedon.conf")
+	if err != nil {
+		return
+	}
+	var onDisk config
+	if _, err := toml.Decode(string(data), &onDisk); err != nil {
+		log.Println("sarpedon.conf changed but could not be parsed; keeping the teams in memory:", err)
+		return
+	}
+	fillEmptyAliases(onDisk.Team)
+	for _, t := range sarpConfig.Team { // teams made since the file was written
+		if !hasTeamID(onDisk.Team, t.ID) {
+			onDisk.Team = append(onDisk.Team, t)
+		}
+	}
+	sarpConfig.Team = onDisk.Team
 }

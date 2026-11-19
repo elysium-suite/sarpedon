@@ -75,7 +75,7 @@
             {{ range $s := .updates }}
             <tr>
                 <td>{{ (local $s.Time).Format "2006-01-02 15:04:05 MST" }}</td>
-                <td>{{ $s.Team.Alias }} <span class="gray">({{ $s.Team.ID }})</span></td>
+                <td>{{ $s.Team.Alias }}</td>
                 <td style="color: {{ $s.Image.Color }}">{{ $s.Image.Name }}</td>
                 <td>{{ $s.Vulns.VulnsScored }} / {{ $s.Vulns.VulnsTotal }}</td>
                 <td>{{ $s.Points }}</td>

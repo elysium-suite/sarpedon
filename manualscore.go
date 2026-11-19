@@ -82,10 +82,7 @@ func scoreComps() ([]scoreComp, error) {
 func scoreTeams() []string {
 	out := []string{}
 	for _, t := range sarpConfig.Team {
-		out = append(out, t.ID)
-		if t.Alias != "" && !strings.EqualFold(t.Alias, t.ID) {
-			out = append(out, t.Alias)
-		}
+		out = append(out, publicName(t.ID, t.Alias))
 	}
 	sort.SliceStable(out, func(i, j int) bool { return strings.ToLower(out[i]) < strings.ToLower(out[j]) })
 	return out

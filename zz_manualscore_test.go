@@ -37,7 +37,7 @@ func TestScoreTeamsAlphabetical(t *testing.T) {
 	defer func() { sarpConfig.Team = old }()
 	sarpConfig.Team = nil
 	for _, n := range []string{"zed", "Bob", "alice"} {
-		sarpConfig.Team = append(sarpConfig.Team, teamData{ID: n})
+		sarpConfig.Team = append(sarpConfig.Team, teamData{ID: "id-" + n, Alias: n})
 	}
 	got := strings.Join(scoreTeams(), ",")
 	if got != "alice,Bob,zed" {

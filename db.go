@@ -160,7 +160,7 @@ func getAll(teamName, imageName string) []scoreEntry {
 	if err := cursor.All(mongoCtx, &scores); err != nil {
 		panic(err)
 	}
-	return scores
+	return withDisplayAlias(scores)
 }
 
 func initScoreboard() {
@@ -263,7 +263,7 @@ func getScores() ([]scoreEntry, error) {
 		return scores, err
 	}
 
-	return scores, nil
+	return withDisplayAlias(scores), nil
 }
 
 func getTop() ([]scoreEntry, error) {
@@ -281,7 +281,7 @@ func getTop() ([]scoreEntry, error) {
 		return scores, err
 	}
 
-	return scores, nil
+	return withDisplayAlias(scores), nil
 }
 
 func getCsv() string {
@@ -289,11 +289,10 @@ func getCsv() string {
 	if err != nil {
 		panic(err)
 	}
-	csvString := "Email,Alias,Team ID,Image,Score,Play Time,Elapsed Time\n"
+	csvString := "Email,Alias,Image,Score,Play Time,Elapsed Time\n"
 	for _, score := range teamScores {
 		csvString += score.Team.Email + ","
 		csvString += score.Team.Alias + ","
-		csvString += score.Team.ID + ","
 		csvString += score.Image.Name + ","
 		csvString += fmt.Sprintf("%d,", score.Points)
 		csvString += formatTime(score.PlayTime) + ","
@@ -360,6 +359,7 @@ func getLastScore(newEntry *scoreEntry) (scoreEntry, error) {
 	if err != nil {
 		fmt.Println("error finding last score:", err)
 	}
+	score.Team.Alias = displayAlias(score.Team)
 	return score, err
 }
 

@@ -40,7 +40,7 @@ func errorOutGraceful(c *gin.Context, err error) {
 
 func getTeam(teamProp string) teamData {
 	for _, team := range sarpConfig.Team {
-		if team.ID == teamProp || team.Email == teamProp || team.Alias == teamProp {
+		if team.ID == teamProp || team.Email == teamProp || team.Alias == teamProp || publicName(team.ID, team.Alias) == teamProp {
 			return team
 		}
 	}
@@ -136,7 +136,7 @@ func calcCompletionTime(newEntry, lastEntry *scoreEntry) error {
 
 				if first {
 					announcementName := "First " + sarpConfig.Alternate.Name + " Perfect Score on " + newEntry.Image.Name
-					announcementBody := "Congratulations to " + newEntry.Team.Alias + " for the first " + sarpConfig.Alternate.Name +
+					announcementBody := "Congratulations to " + displayAlias(newEntry.Team) + " for the first " + sarpConfig.Alternate.Name +
 						" perfect score on " + newEntry.Image.Name + "!"
 
 					err := insertAnnouncement(&announcement{time.Now(), announcementName, announcementBody})
@@ -149,7 +149,7 @@ func calcCompletionTime(newEntry, lastEntry *scoreEntry) error {
 					newCompletion := &completion{
 						ImageName: newEntry.Image.Name + "-ALT",
 						TeamID:    newEntry.Team.ID,
-						Alias:     newEntry.Team.Alias,
+						Alias:     displayAlias(newEntry.Team),
 					}
 
 					err = insertCompletion(newCompletion)
@@ -168,7 +168,7 @@ func calcCompletionTime(newEntry, lastEntry *scoreEntry) error {
 
 			if first {
 				announcementName := "First Perfect Score on " + newEntry.Image.Name
-				announcementBody := "Congratulations to " + newEntry.Team.Alias + " for the first perfect score on " + newEntry.Image.Name + "!"
+				announcementBody := "Congratulations to " + displayAlias(newEntry.Team) + " for the first perfect score on " + newEntry.Image.Name + "!"
 				err := insertAnnouncement(&announcement{time.Now(), announcementName, announcementBody})
 				if err != nil {
 					fmt.Println("Error inserting new announcement", err)
@@ -179,7 +179,7 @@ func calcCompletionTime(newEntry, lastEntry *scoreEntry) error {
 				newCompletion := &completion{
 					ImageName: newEntry.Image.Name,
 					TeamID:    newEntry.Team.ID,
-					Alias:     newEntry.Team.Alias,
+					Alias:     displayAlias(newEntry.Team),
 				}
 
 				err = insertCompletion(newCompletion)

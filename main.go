@@ -180,7 +180,7 @@ func viewTeam(c *gin.Context) {
 		return
 	}
 	if teamData.Alias == "" { // a team with practice levels only
-		teamData.Alias = teamName
+		teamData.Alias = teamLabel(teamName)
 		if len(practiceEntries) > 0 {
 			teamData.Alias = practiceEntries[0].Team.Alias
 		}
@@ -231,7 +231,7 @@ func viewTeam(c *gin.Context) {
 		}
 	}
 
-	c.HTML(http.StatusOK, "detail.html", pageData(c, "Scoreboard for "+teamName, gin.H{"data": teamScore, "team": teamData, "labels": labels, "images": images, "tz": sarpConfig.Timezone,
+	c.HTML(http.StatusOK, "detail.html", pageData(c, "Scoreboard for "+teamData.Alias, gin.H{"data": teamScore, "team": teamData, "labels": labels, "images": images, "tz": sarpConfig.Timezone,
 		"practice": practice, "practiceErr": practiceErr, "practiceTL": practiceTL, "practiceVulns": practiceVulns}))
 }
 

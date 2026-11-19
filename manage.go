@@ -53,7 +53,7 @@ func parseSubName(name string) (string, string) {
 }
 
 // aliasFor returns a team's alias from sarpedon.conf (by id, case-insensitive), or "".
-func aliasFor(id string) string {
+func aliasFor(id string) string { // may equal the id; never display it, use teamLabel
 	for _, t := range sarpConfig.Team {
 		if strings.EqualFold(t.ID, id) {
 			return t.Alias
@@ -104,11 +104,7 @@ func aliasFilename(name string) string {
 		return name
 	}
 	teamID := strings.Join(parts[:li], "_")
-	alias := aliasFor(teamID)
-	if alias == "" || strings.EqualFold(alias, teamID) {
-		return name
-	}
-	return safeFilePart(alias) + "_" + strings.Join(parts[li:], "_") + ".pka"
+	return safeFilePart(teamLabel(teamID)) + "_" + strings.Join(parts[li:], "_") + ".pka"
 }
 
 func viewManage(c *gin.Context) {
@@ -358,12 +354,12 @@ func viewReview(c *gin.Context) {
 			t, n := parseSubName(name)
 			s["team"] = t
 			s["level"] = n
-			s["teamAlias"] = aliasFor(t)
+			s["teamAlias"] = teamLabel(t)
 		}
 	}
 	for _, p := range prog.Progress {
 		if t, ok := p["team"].(string); ok {
-			p["teamAlias"] = aliasFor(t)
+			p["teamAlias"] = teamLabel(t)
 		}
 	}
 	// levelsvc reports file times in UTC; show them in the configured timezone like every other page

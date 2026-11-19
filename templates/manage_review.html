@@ -11,7 +11,7 @@
       <tbody>
       {{ range .progress }}
         <tr>
-          <td>{{ if .teamAlias }}{{ .teamAlias }}{{ else }}{{ .team }}{{ end }}</td><td>{{ .level }}</td><td>{{ .name }}</td><td>{{ .bytes }}</td><td>{{ .modified }}</td>
+          <td>{{ .teamAlias }}</td><td>{{ .level }}</td><td>{{ .name }}</td><td>{{ .bytes }}</td><td>{{ .modified }}</td>
           <td><a class="btn btn-sm btn-secondary" href="/manage/download?comp={{ $.comp }}&kind=progress&name={{ .name }}">Download</a></td>
         </tr>
       {{ end }}
@@ -24,11 +24,11 @@
       <tbody>
       {{ range .submissions }}
         <tr>
-          <td>{{ if .teamAlias }}{{ .teamAlias }}{{ else }}{{ .team }}{{ end }}</td><td>{{ .level }}</td><td>{{ .name }}</td><td>{{ .bytes }}</td><td>{{ .modified }}</td>
+          <td>{{ .teamAlias }}</td><td>{{ .level }}</td><td>{{ .name }}</td><td>{{ .bytes }}</td><td>{{ .modified }}</td>
           <td>
             <a class="btn btn-sm btn-secondary" href="/manage/download?comp={{ $.comp }}&kind=submission&name={{ .name }}">Download</a>
             {{ if and .team .level }}
-            <form style="display:inline" method="POST" action="/manage/restore" onsubmit="return confirm('Make this the resumable copy for {{ .team }} level {{ .level }}?')">
+            <form style="display:inline" method="POST" action="/manage/restore" onsubmit="return confirm('Make this the resumable copy for {{ .teamAlias }} level {{ .level }}?')">
               <input type="hidden" name="comp" value="{{ $.comp }}">
               <input type="hidden" name="kind" value="submission">
               <input type="hidden" name="name" value="{{ .name }}">
