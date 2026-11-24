@@ -238,7 +238,58 @@ func communityVisible() (*communityFeed, error) {
 	if err != nil {
 		return nil, err
 	}
-	return applyNames(applyHidden(f, hiddenLoader()), namesLoader()), nil
+	h := hiddenLoader()
+	merged := applyHidden(mergeLinkedUsers(applyHidden(f, h), linkMap(linksLoader())), h)
+	return applyNames(merged, namesLoader()), nil
+}
+
+// mergeLinkedUsers combines players that the admin linked to the same scoreboard alias: per image
+// the entry with the best score wins (earlier submissions are summed, latest = newest), and the
+// merged entry is shown under the alias. A player alone on an alias keeps their own name.
+func mergeLinkedUsers(f *communityFeed, links map[string]string) *communityFeed {
+	users := map[string]map[string]bool{} // alias -> distinct feed users linked to it
+	for _, img := range f.Images {
+		for _, e := range img.Entries {
+			if a := links[e.User]; a != "" {
+				if users[a] == nil {
+					users[a] = map[string]bool{}
+				}
+				users[a][e.User] = true
+			}
+		}
+	}
+	out := &communityFeed{Generated: f.Generated}
+	for _, img := range f.Images {
+		ni := communityImage{Image: img.Image, Key: img.Key}
+		at := map[string]int{} // alias -> index in ni.Entries
+		for _, e := range img.Entries {
+			a := links[e.User]
+			if a == "" || len(users[a]) < 2 {
+				ni.Entries = append(ni.Entries, e)
+				continue
+			}
+			i, ok := at[a]
+			if !ok {
+				e.User = a
+				at[a] = len(ni.Entries)
+				ni.Entries = append(ni.Entries, e)
+				continue
+			}
+			cur := &ni.Entries[i]
+			cur.Submissions += e.Submissions
+			if e.Best.Score > cur.Best.Score {
+				cur.Best = e.Best
+			}
+			if e.Latest.Submitted > cur.Latest.Submitted {
+				cur.Latest = e.Latest
+			}
+			if e.Rank != nil && (cur.Rank == nil || *e.Rank < *cur.Rank) {
+				cur.Rank = e.Rank
+			}
+		}
+		out.Images = append(out.Images, ni)
+	}
+	return out
 }
 
 func communityData(f *communityFeed, err error) gin.H {

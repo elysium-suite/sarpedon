@@ -138,3 +138,16 @@ func TestApplyNames(t *testing.T) {
 		t.Fatal("input mutated")
 	}
 }
+
+func TestMergeLinkedUsers(t *testing.T) {
+	sc := func(n int, at string) communityScore { return communityScore{Score: n, Submitted: at} }
+	f := &communityFeed{Images: []communityImage{{Image: "A", Key: "a", Entries: []communityEntry{
+		{User: "Sarah Hu", Submissions: 1, Best: sc(60, "2026-01-01"), Latest: sc(60, "2026-01-01")},
+		{User: "sarhu2", Submissions: 2, Best: sc(80, "2026-01-02"), Latest: sc(50, "2026-01-03")},
+		{User: "solo", Submissions: 1, Best: sc(10, "2026-01-01"), Latest: sc(10, "2026-01-01")}}}}}
+	out := mergeLinkedUsers(f, map[string]string{"Sarah Hu": "sarhu", "sarhu2": "sarhu", "solo": "x"})
+	es := out.Images[0].Entries
+	if len(es) != 2 || es[0].User != "sarhu" || es[0].Best.Score != 80 || es[0].Submissions != 3 || es[0].Latest.Score != 50 || es[1].User != "solo" {
+		t.Fatalf("merge: %+v", es)
+	}
+}
