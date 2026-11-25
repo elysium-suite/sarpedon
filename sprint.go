@@ -46,11 +46,11 @@ type sprintWeek struct {
 	Units []int
 }
 
-// High School: the first sprint covers units 1-4, then one unit a week (unit 10 is skipped),
-// finishing with two units in the last two weeks.
+// High School: the first sprint covers units 1-4, then one unit a week, finishing with two
+// units in the last two weeks.
 var hsSprintWeeks = []sprintWeek{
-	{1, []int{1, 2, 3, 4}}, {2, []int{5}}, {3, []int{6}}, {4, []int{7}}, {5, []int{8}},
-	{6, []int{9}}, {7, []int{11}}, {8, []int{12}}, {9, []int{13, 14}}, {10, []int{15, 16}},
+	{1, []int{1, 2, 3, 4}}, {2, []int{5}}, {3, []int{6}}, {4, []int{7}}, {5, []int{8}}, {6, []int{9}},
+	{7, []int{10}}, {8, []int{11}}, {9, []int{12}}, {10, []int{13, 14}}, {11, []int{15, 16}},
 }
 
 // Middle School: one unit per week, over whichever units actually have practices.
